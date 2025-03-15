@@ -1,13 +1,14 @@
 #include "raylib.h"
 
 #include "config.h"
-#include "constants.h"
 #include "screen.h"
 
 int main(void) {
     SetupConfiguration();
     while(!WindowShouldClose()) {
-        ScreenController();
+        BeginDrawing();
+            ScreenController();
+        EndDrawing();
     }
     CloseWindow();
     return 0;

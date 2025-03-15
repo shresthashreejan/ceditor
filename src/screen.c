@@ -1,13 +1,9 @@
 #include "raylib.h"
 
 #include "constants.h"
-
-void UpdateFrame(void) {
-    BeginDrawing();
-        ClearBackground(RAYWHITE);
-    EndDrawing();
-}
+#include "text.h"
 
 void ScreenController(void) {
-    UpdateFrame();
+    ClearBackground(RAYWHITE);
+    TextController();
 }
