@@ -1,32 +1,39 @@
 #include "raylib.h"
-#include "raygui.h"
 
 #include "constants.h"
 
-static char text[10][MAX_TEXT_LENGTH] = {0};
-static int lineCount = 1; // TODO: Make line count dynamic
-static int cursorPos = 0;
+char input[256] = "";
+int letterCount = 0;
+int lineCount = 0;
+Vector2 cursorPos = {0,0};
 
-void InsertNewLine(void) {
-    if(IsKeyPressed(KEY_ENTER)) {
-        lineCount++;
-        cursorPos++;
-    }
-}
+void CursorTracker(void) {}
 
-void CursorTracker(void) {
-    if(IsKeyPressed(KEY_DOWN) && cursorPos < lineCount) {
-        cursorPos++;
+void KeyController(void) {    
+    int key = GetCharPressed();
+    while(key > 0) {
+        if(key == KEY_ENTER) {
+            input[letterCount] = '\n';
+            letterCount++;
+            lineCount++;
+        }else if(key >= 32 && key <= 125) {
+            if(letterCount < 255) {
+                input[letterCount] = (char)key;
+                letterCount++;
+            }
+        }
+        key = GetCharPressed();
     }
-    if(IsKeyPressed(KEY_UP) && cursorPos >= 0) {
-        cursorPos--;
+    // TODO: Iterate and modify the input array and render entire array instead of rendering individual letters
+    for(int i = 0; i < letterCount; i++) {
+        if (input[i] == '\n') {
+            cursorPos.y += 20;
+        } else {
+            DrawText(&input[i], cursorPos.x, cursorPos.y, 20, BLACK); // This does not work
+        }
     }
 }
 
 void TextController(void) {
-    InsertNewLine();
-    CursorTracker();
-    for(int i = 0; i < lineCount; i++) {
-        GuiTextBox((Rectangle){ 0, 0 + (i * 20), GetScreenWidth(), 20 }, text[i], MAX_TEXT_LENGTH, i == cursorPos ? true : false);
-    }
+    KeyController();
 }
