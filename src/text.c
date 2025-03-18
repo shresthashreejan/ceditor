@@ -17,6 +17,12 @@ void KeyController(void) {
             characters[line] = 0;
         }
     }
+    if(IsKeyPressed(KEY_BACKSPACE)) {
+        if(characters[line] >= 0) {
+            text[line][characters[line]] = '\0';
+            characters[line]--; 
+        }
+    }
     int key = GetCharPressed();
     while(key > 0) {
         if(key >= 32 && key <= 125) {
