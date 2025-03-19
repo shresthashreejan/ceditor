@@ -1,9 +1,9 @@
 #include "raylib.h"
 
 #include "constants.h"
-#include "text.h"
+#include "page.h"
 
 void ScreenController(void) {
     ClearBackground(RAYWHITE);
-    TextController();
+    PageController();
 }

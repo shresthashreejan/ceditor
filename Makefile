@@ -4,7 +4,7 @@ LDFLAGS = -lraylib -lGL -lm -lpthread
 
 BUILD = build
 
-OBJ = ${BUILD}/main.o ${BUILD}/raygui.o ${BUILD}/config.o ${BUILD}/screen.o ${BUILD}/text.o
+OBJ = ${BUILD}/main.o ${BUILD}/raygui.o ${BUILD}/config.o ${BUILD}/screen.o ${BUILD}/page.o
 
 OUT = ${BUILD}/ceditor
 
@@ -24,8 +24,8 @@ ${BUILD}/config.o: src/config.c
 ${BUILD}/screen.o: src/screen.c
 	$(CC) $(CFLAGS) -c src/screen.c -o ${BUILD}/screen.o
 
-${BUILD}/text.o: src/text.c
-	$(CC) $(CFLAGS) -c src/text.c -o ${BUILD}/text.o
+${BUILD}/page.o: src/page.c
+	$(CC) $(CFLAGS) -c src/page.c -o ${BUILD}/page.o
 
 clean_objects:
 	rm -f $(OBJ)
