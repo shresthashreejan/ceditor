@@ -1,9 +1,11 @@
 #include "raylib.h"
 
+#include "screen.h"
 #include "constants.h"
-#include "page.h"
+#include "text_buffer.h"
 
 void ScreenController(void) {
     ClearBackground(RAYWHITE);
-    PageController();
+    KeyController();
+    TextBufferController();
 }

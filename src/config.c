@@ -1,5 +1,6 @@
 #include "raylib.h"
 
+#include "config.h"
 #include "constants.h"
 #include "screen.h"
 
