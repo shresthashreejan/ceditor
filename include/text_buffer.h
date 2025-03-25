@@ -6,6 +6,7 @@ typedef struct {
     int length;
     int capacity;
     int cursorPos;
+    bool cursorVisible;
 } TextBuffer;
 
 void InitializeTextBuffer(void);

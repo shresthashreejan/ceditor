@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "raylib.h"
 
@@ -7,13 +8,16 @@
 #include "constants.h"
 
 TextBuffer textBuffer;
+double lastBlinkTime;
 
 void InitializeTextBuffer(void) {
     textBuffer.text = (char *)malloc(1024);
     textBuffer.length = 0;
     textBuffer.capacity = 1024;
     textBuffer.cursorPos = 0;
+    textBuffer.cursorVisible = false;
     textBuffer.text[0] = '\0';
+    lastBlinkTime = GetTime();
 }
 
 void InsertChar(TextBuffer *buffer, char ch) {
@@ -80,23 +84,31 @@ void TextBufferController(void) {
         }
     }
 
-    int cursorLine = 0;
-    int cursorLineStart = 0;
-    for(int i = 0; i < textBuffer.cursorPos; i++) {
-        if(textBuffer.text[i] == '\n') {
-            cursorLine++;
-            cursorLineStart = i + 1;
-        }
+    double currentTime = GetTime();
+    if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
+        textBuffer.cursorVisible = !textBuffer.cursorVisible;
+        lastBlinkTime = currentTime;
     }
 
-    int charsInLine = textBuffer.cursorPos - cursorLineStart;
-    char currentLine[1024];
-    strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
-    currentLine[charsInLine] = '\0';
+    if(textBuffer.cursorVisible) {
+        int cursorLine = 0;
+        int cursorLineStart = 0;
+        for(int i = 0; i < textBuffer.cursorPos; i++) {
+            if(textBuffer.text[i] == '\n') {
+                cursorLine++;
+                cursorLineStart = i + 1;
+            }
+        }
 
-    int cursorX = TEXT_MARGIN + MeasureText(currentLine, FONT_SIZE);
-    int cursorY = TEXT_MARGIN + cursorLine * FONT_SIZE;
-    DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
+        int charsInLine = textBuffer.cursorPos - cursorLineStart;
+        char currentLine[1024];
+        strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
+        currentLine[charsInLine] = '\0';
+
+        int cursorX = TEXT_MARGIN + MeasureText(currentLine, FONT_SIZE);
+        int cursorY = TEXT_MARGIN + cursorLine * FONT_SIZE;
+        DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
+    }
 }
 
 void FreeTextBuffer(void) {
