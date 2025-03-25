@@ -5,7 +5,7 @@
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 360
 #define FONT_SIZE 20
-#define TEXT_MARGIN 10
+#define TEXT_MARGIN 1.0f
 #define BLINK_INTERVAL 0.5f
 
 #endif

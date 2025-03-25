@@ -2,17 +2,16 @@
 
 #include "config.h"
 #include "screen.h"
-#include "text_buffer.h"
 
 int main(void) {
     SetupConfiguration();
-    InitializeTextBuffer();
+    LoadResources();
     while(!WindowShouldClose()) {
         BeginDrawing();
             ScreenController();
         EndDrawing();
     }
-    FreeTextBuffer();
+    UnloadResources();
     CloseWindow();
     return 0;
 }

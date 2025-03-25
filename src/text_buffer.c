@@ -1,14 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "raylib.h"
 
 #include "text_buffer.h"
 #include "constants.h"
+#include "config.h"
 
 TextBuffer textBuffer;
 double lastBlinkTime;
+Font font;
 
 void InitializeTextBuffer(void) {
     textBuffer.text = (char *)malloc(1024);
@@ -18,6 +19,7 @@ void InitializeTextBuffer(void) {
     textBuffer.cursorVisible = false;
     textBuffer.text[0] = '\0';
     lastBlinkTime = GetTime();
+    font = GetFont();
 }
 
 void InsertChar(TextBuffer *buffer, char ch) {
@@ -78,7 +80,8 @@ void TextBufferController(void) {
             strncpy(line, &textBuffer.text[lineStart], lineLength);
             line[lineLength] = '\0';
 
-            DrawText(line, TEXT_MARGIN, TEXT_MARGIN + lineNumber * FONT_SIZE, FONT_SIZE, BLACK);
+            Vector2 linePos = {TEXT_MARGIN, TEXT_MARGIN + lineNumber * FONT_SIZE};
+            DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
             lineStart = i + 1;
             lineNumber++;
         }
@@ -105,7 +108,8 @@ void TextBufferController(void) {
         strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
         currentLine[charsInLine] = '\0';
 
-        int cursorX = TEXT_MARGIN + MeasureText(currentLine, FONT_SIZE);
+        Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
+        int cursorX = TEXT_MARGIN + textSize.x;
         int cursorY = TEXT_MARGIN + cursorLine * FONT_SIZE;
         DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
     }
