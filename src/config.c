@@ -33,5 +33,4 @@ Font GetFont(void) {
 
 void LoadCustomFont(void) {
     customFont = LoadFontEx("./assets/fonts/JuliaMono-Medium.ttf", FONT_SIZE * 2, NULL, 0);
-    SetTextureFilter(customFont.texture, TEXTURE_FILTER_TRILINEAR);
 }

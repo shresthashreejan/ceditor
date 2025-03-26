@@ -5,8 +5,9 @@ typedef struct {
     char *text;
     int length;
     int capacity;
-    int cursorPos;
+    Vector2 cursorPos;
     bool cursorVisible;
+    int lineCount;
 } TextBuffer;
 
 void InitializeTextBuffer(void);

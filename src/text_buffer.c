@@ -15,9 +15,11 @@ void InitializeTextBuffer(void) {
     textBuffer.text = (char *)malloc(1024);
     textBuffer.length = 0;
     textBuffer.capacity = 1024;
-    textBuffer.cursorPos = 0;
+    textBuffer.cursorPos.x = 0;
+    textBuffer.cursorPos.y = 0;
     textBuffer.cursorVisible = false;
     textBuffer.text[0] = '\0';
+    textBuffer.lineCount = 0;
     lastBlinkTime = GetTime();
     font = GetFont();
 }
@@ -27,18 +29,18 @@ void InsertChar(TextBuffer *buffer, char ch) {
         buffer->capacity *= 2;
         buffer->text = (char *)realloc(buffer->text, buffer->capacity);
     }
-    memmove(&buffer->text[buffer->cursorPos + 1], &buffer->text[buffer->cursorPos], buffer->length - buffer->cursorPos + 1);
-    buffer->text[buffer->cursorPos] = ch;
+    memmove(&buffer->text[(int)buffer->cursorPos.x + 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
+    buffer->text[(int)buffer->cursorPos.x] = ch;
     buffer->length++;
-    buffer->cursorPos++;
+    buffer->cursorPos.x++;
     buffer->text[buffer->length] = '\0';
 }
 
 void RemoveChar(TextBuffer *buffer) {
-    if(buffer->cursorPos > 0) {
-        memmove(&buffer->text[buffer->cursorPos - 1], &buffer->text[buffer->cursorPos], buffer->length - buffer->cursorPos + 1);
+    if(buffer->cursorPos.x > 0) {
+        memmove(&buffer->text[(int)buffer->cursorPos.x - 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
         buffer->length--;
-        buffer->cursorPos--;
+        buffer->cursorPos.x--;
         buffer->text[buffer->length] = '\0';
     }
 }
@@ -54,6 +56,7 @@ void KeyController(void) {
 
     if(IsKeyPressed(KEY_ENTER)) {
         InsertChar(&textBuffer, '\n');
+        textBuffer.cursorPos.y++;
     }
 
     if(IsKeyPressed(KEY_BACKSPACE)) {
@@ -61,17 +64,31 @@ void KeyController(void) {
     }
 
     if(IsKeyPressed(KEY_LEFT)) {
-        if(textBuffer.cursorPos > 0) textBuffer.cursorPos--;
+        if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
     }
 
     if(IsKeyPressed(KEY_RIGHT)) {
-        if(textBuffer.cursorPos < textBuffer.length) textBuffer.cursorPos++;
+        if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
+    }
+
+    if(IsKeyPressed(KEY_UP)) {
+        if(textBuffer.cursorPos.y > 0) {
+            textBuffer.cursorPos.y--;
+            // TODO: Calculate cursorPos.x
+        }
+    }
+
+    if(IsKeyPressed(KEY_DOWN)) {
+        if(textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
+            textBuffer.cursorPos.y++;
+            // TODO: Calculate cursorPos.x
+        }
     }
 }
 
 void TextBufferController(void) {
     int lineStart = 0;
-    int lineNumber = 0;
+    textBuffer.lineCount = 0;
     for(int i = 0; i <= textBuffer.length; i++) {
         if(textBuffer.text[i] == '\n' || i == textBuffer.length) {
             int lineEnd = i;
@@ -80,10 +97,10 @@ void TextBufferController(void) {
             strncpy(line, &textBuffer.text[lineStart], lineLength);
             line[lineLength] = '\0';
 
-            Vector2 linePos = {TEXT_MARGIN, TEXT_MARGIN + lineNumber * FONT_SIZE};
+            Vector2 linePos = {TEXT_MARGIN, TEXT_MARGIN + textBuffer.lineCount * FONT_SIZE};
             DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
             lineStart = i + 1;
-            lineNumber++;
+            textBuffer.lineCount++;
         }
     }
 
@@ -94,23 +111,21 @@ void TextBufferController(void) {
     }
 
     if(textBuffer.cursorVisible) {
-        int cursorLine = 0;
         int cursorLineStart = 0;
-        for(int i = 0; i < textBuffer.cursorPos; i++) {
+        for(int i = 0; i < textBuffer.cursorPos.x; i++) {
             if(textBuffer.text[i] == '\n') {
-                cursorLine++;
                 cursorLineStart = i + 1;
             }
         }
 
-        int charsInLine = textBuffer.cursorPos - cursorLineStart;
+        int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
         char currentLine[1024];
         strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
         currentLine[charsInLine] = '\0';
 
         Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
         int cursorX = TEXT_MARGIN + textSize.x;
-        int cursorY = TEXT_MARGIN + cursorLine * FONT_SIZE;
+        int cursorY = TEXT_MARGIN + textBuffer.cursorPos.y * FONT_SIZE;
         DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
     }
 }
