@@ -8,8 +8,17 @@
 #include "config.h"
 
 TextBuffer textBuffer;
+int lineInfosCapacity = 0;
+LineInfo *lineInfos = NULL;
 double lastBlinkTime;
 Font font;
+
+void SetupTextBuffer(void) {
+    InitializeTextBuffer();
+    InitializeLineInfos();
+    lastBlinkTime = GetTime();
+    font = GetFont();
+}
 
 void InitializeTextBuffer(void) {
     textBuffer.text = (char *)malloc(1024);
@@ -20,8 +29,11 @@ void InitializeTextBuffer(void) {
     textBuffer.cursorVisible = false;
     textBuffer.text[0] = '\0';
     textBuffer.lineCount = 0;
-    lastBlinkTime = GetTime();
-    font = GetFont();
+}
+
+void InitializeLineInfos(void) {
+    lineInfosCapacity = 16;
+    lineInfos = (LineInfo *)malloc(lineInfosCapacity * sizeof(LineInfo));
 }
 
 void InsertChar(TextBuffer *buffer, char ch) {
@@ -81,7 +93,11 @@ void KeyController(void) {
     if(IsKeyPressed(KEY_DOWN)) {
         if(textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
             textBuffer.cursorPos.y++;
-            // TODO: Calculate cursorPos.x
+            for(int i = 0; i <= textBuffer.cursorPos.y; i++) {
+                if(textBuffer.cursorPos.x >= lineInfos[i].lineStart && textBuffer.cursorPos.x <= lineInfos[i].lineEnd) {
+                    // TODO: Calculate cursor pos x
+                }
+            }
         }
     }
 }
@@ -91,14 +107,26 @@ void TextBufferController(void) {
     textBuffer.lineCount = 0;
     for(int i = 0; i <= textBuffer.length; i++) {
         if(textBuffer.text[i] == '\n' || i == textBuffer.length) {
+
+            if(textBuffer.lineCount >= lineInfosCapacity) {
+                int newCapacity = lineInfosCapacity * 2;
+                lineInfos = (LineInfo *)realloc(lineInfos, newCapacity * sizeof(LineInfo));
+                lineInfosCapacity = newCapacity;
+            }
+
             int lineEnd = i;
             int lineLength = lineEnd - lineStart;
             char line[1024];
             strncpy(line, &textBuffer.text[lineStart], lineLength);
             line[lineLength] = '\0';
-
             Vector2 linePos = {TEXT_MARGIN, TEXT_MARGIN + textBuffer.lineCount * FONT_SIZE};
             DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
+
+            lineInfos[textBuffer.lineCount].lineCount = textBuffer.lineCount;
+            lineInfos[textBuffer.lineCount].lineLength = lineLength;
+            lineInfos[textBuffer.lineCount].lineStart = lineStart;
+            lineInfos[textBuffer.lineCount].lineEnd = lineEnd;
+
             lineStart = i + 1;
             textBuffer.lineCount++;
         }
@@ -133,4 +161,15 @@ void TextBufferController(void) {
 void FreeTextBuffer(void) {
     free(textBuffer.text);
     textBuffer.text = NULL;
+}
+
+void FreeLineInfos(void) {
+    free(lineInfos);
+    lineInfos = NULL;
+    lineInfosCapacity = 0;
+}
+
+void FreeBufferMemory(void) {
+    FreeTextBuffer();
+    FreeLineInfos();
 }

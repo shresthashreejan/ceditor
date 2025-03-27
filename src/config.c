@@ -19,12 +19,12 @@ void SetupConfiguration(void) {
 
 void LoadResources(void) {
     LoadCustomFont();
-    InitializeTextBuffer();
+    SetupTextBuffer();
 }
 
 void UnloadResources(void) {
     UnloadFont(customFont);
-    FreeTextBuffer();
+    FreeBufferMemory();
 }
 
 Font GetFont(void) {

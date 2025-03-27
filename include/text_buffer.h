@@ -10,11 +10,22 @@ typedef struct {
     int lineCount;
 } TextBuffer;
 
+typedef struct {
+    int lineCount;
+    int lineLength;
+    int lineStart;
+    int lineEnd;
+} LineInfo;
+
+void SetupTextBuffer(void);
 void InitializeTextBuffer(void);
+void InitializeLineInfos(void);
 void InsertChar(TextBuffer *buffer, char ch);
 void RemoveChar(TextBuffer *buffer);
 void KeyController(void);
 void TextBufferController(void);
 void FreeTextBuffer(void);
+void FreeLineInfos(void);
+void FreeBufferMemory(void);
 
 #endif
