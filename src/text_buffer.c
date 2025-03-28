@@ -79,27 +79,60 @@ void KeyController(void) {
         if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
     }
 
+    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_LEFT)) {
+        if(textBuffer.cursorPos.x > 0) {
+            LineInfo *currentLine = &lineInfos[(int)textBuffer.cursorPos.y];
+            textBuffer.cursorPos.x = currentLine->lineStart;
+        }
+    }
+
+    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_RIGHT)) {
+        if(textBuffer.cursorPos.x > 0) {
+            LineInfo *currentLine = &lineInfos[(int)textBuffer.cursorPos.y];
+            textBuffer.cursorPos.x = currentLine->lineEnd - 1; // lineEnd stores null terminator
+        }
+    }
+
     if(IsKeyPressed(KEY_RIGHT)) {
         if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
     }
 
-    if(IsKeyPressed(KEY_UP)) {
-        if(textBuffer.cursorPos.y > 0) {
+    if (IsKeyPressed(KEY_UP)) {
+        if (textBuffer.cursorPos.y > 0) {
+            int previousY = textBuffer.cursorPos.y;
             textBuffer.cursorPos.y--;
-            // TODO: Calculate cursorPos.x
+            if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
+                textBuffer.cursorPos.y = previousY;
+                return;
+            }
+            int cursorX = CalculateCursorPosX(previousY);
+            textBuffer.cursorPos.x = cursorX;
         }
     }
 
-    if(IsKeyPressed(KEY_DOWN)) {
-        if(textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
+    if (IsKeyPressed(KEY_DOWN)) {
+        if (textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
+            int previousY = textBuffer.cursorPos.y;
             textBuffer.cursorPos.y++;
-            for(int i = 0; i <= textBuffer.cursorPos.y; i++) {
-                if(textBuffer.cursorPos.x >= lineInfos[i].lineStart && textBuffer.cursorPos.x <= lineInfos[i].lineEnd) {
-                    // TODO: Calculate cursor pos x
-                }
+            if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
+                textBuffer.cursorPos.y = previousY;
+                return;
             }
+            int cursorX = CalculateCursorPosX(previousY);
+            textBuffer.cursorPos.x = cursorX;
         }
     }
+}
+
+int CalculateCursorPosX(int previousY) {
+    LineInfo *currentLine = &lineInfos[previousY];
+    LineInfo *newLine = &lineInfos[(int)textBuffer.cursorPos.y];
+    int offset = textBuffer.cursorPos.x - currentLine->lineStart;
+    int newXPos = newLine->lineStart + offset;
+    if (newXPos > newLine->lineEnd) {
+        newXPos = newLine->lineEnd;
+    }
+    return newXPos;
 }
 
 void TextBufferController(void) {

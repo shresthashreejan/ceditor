@@ -27,5 +27,6 @@ void TextBufferController(void);
 void FreeTextBuffer(void);
 void FreeLineInfos(void);
 void FreeBufferMemory(void);
+int CalculateCursorPosX(int previousY);
 
 #endif
