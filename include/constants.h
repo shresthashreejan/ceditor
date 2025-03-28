@@ -7,5 +7,7 @@
 #define FONT_SIZE 20
 #define TEXT_MARGIN 1.0f
 #define BLINK_INTERVAL 0.5f
+#define SIDEBAR_WIDTH 15
+#define SIDEBAR_COLOR GRAY
 
 #endif

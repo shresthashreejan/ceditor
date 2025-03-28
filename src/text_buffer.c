@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "raylib.h"
 
@@ -12,6 +13,7 @@ int lineInfosCapacity = 0;
 LineInfo *lineInfos = NULL;
 double lastBlinkTime;
 Font font;
+int sidebarWidth = SIDEBAR_WIDTH;
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
@@ -136,11 +138,11 @@ int CalculateCursorPosX(int previousY) {
 }
 
 void TextBufferController(void) {
+    DrawRectangle(0, 0, sidebarWidth, GetScreenHeight(), SIDEBAR_COLOR);
     int lineStart = 0;
     textBuffer.lineCount = 0;
     for(int i = 0; i <= textBuffer.length; i++) {
         if(textBuffer.text[i] == '\n' || i == textBuffer.length) {
-
             if(textBuffer.lineCount >= lineInfosCapacity) {
                 int newCapacity = lineInfosCapacity * 2;
                 lineInfos = (LineInfo *)realloc(lineInfos, newCapacity * sizeof(LineInfo));
@@ -152,7 +154,19 @@ void TextBufferController(void) {
             char line[1024];
             strncpy(line, &textBuffer.text[lineStart], lineLength);
             line[lineLength] = '\0';
-            Vector2 linePos = {TEXT_MARGIN, TEXT_MARGIN + textBuffer.lineCount * FONT_SIZE};
+
+            int lineNumber = textBuffer.lineCount + 1;
+            char lineNumberStr[16];
+            snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", lineNumber);
+            Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
+            if(numberSize.x >= sidebarWidth) {
+                sidebarWidth = numberSize.x + 2;
+            }
+            int xPos = sidebarWidth - numberSize.x - 2;
+            int yPos = TEXT_MARGIN + textBuffer.lineCount * FONT_SIZE;
+            DrawTextEx(font, lineNumberStr, (Vector2){xPos, yPos}, FONT_SIZE, TEXT_MARGIN, BLACK);
+
+            Vector2 linePos = {sidebarWidth + TEXT_MARGIN, yPos};
             DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
 
             lineInfos[textBuffer.lineCount].lineCount = textBuffer.lineCount;
@@ -185,7 +199,7 @@ void TextBufferController(void) {
         currentLine[charsInLine] = '\0';
 
         Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
-        int cursorX = TEXT_MARGIN + textSize.x;
+        int cursorX = sidebarWidth + TEXT_MARGIN + textSize.x;
         int cursorY = TEXT_MARGIN + textBuffer.cursorPos.y * FONT_SIZE;
         DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
     }
