@@ -160,9 +160,9 @@ void TextBufferController(void) {
             snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", lineNumber);
             Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
             if(numberSize.x >= sidebarWidth) {
-                sidebarWidth = numberSize.x + 2;
+                sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
             }
-            int xPos = sidebarWidth - numberSize.x - 2;
+            int xPos = sidebarWidth - numberSize.x - SIDEBAR_MARGIN;
             int yPos = TEXT_MARGIN + textBuffer.lineCount * FONT_SIZE;
             DrawTextEx(font, lineNumberStr, (Vector2){xPos, yPos}, FONT_SIZE, TEXT_MARGIN, BLACK);
 

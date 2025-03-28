@@ -10,7 +10,7 @@
 Font customFont;
 
 void SetupConfiguration(void) {
-    SetTargetFPS(60);
+    SetTargetFPS(0);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, CEDITOR);
     SetWindowMinSize(SCREEN_WIDTH, SCREEN_HEIGHT);

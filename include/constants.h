@@ -9,5 +9,6 @@
 #define BLINK_INTERVAL 0.5f
 #define SIDEBAR_WIDTH 15
 #define SIDEBAR_COLOR GRAY
+#define SIDEBAR_MARGIN 2
 
 #endif

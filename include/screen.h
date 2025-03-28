@@ -3,5 +3,6 @@
 
 void UpdateFrame(void);
 void ScreenController(void);
+void RenderFrameRate(void);
 
 #endif
