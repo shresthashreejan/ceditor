@@ -31,6 +31,9 @@ void InitializeTextBuffer(void) {
     textBuffer.cursorVisible = false;
     textBuffer.text[0] = '\0';
     textBuffer.lineCount = 0;
+    textBuffer.selectionStart = 0;
+    textBuffer.selectionEnd = 0;
+    textBuffer.hasSelection = false;
 }
 
 void InitializeLineInfos(void) {
@@ -81,6 +84,10 @@ void KeyController(void) {
         if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
     }
 
+    if(IsKeyPressed(KEY_RIGHT)) {
+        if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
+    }
+
     if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_LEFT)) {
         if(textBuffer.cursorPos.x > 0) {
             LineInfo *currentLine = &lineInfos[(int)textBuffer.cursorPos.y];
@@ -95,11 +102,7 @@ void KeyController(void) {
         }
     }
 
-    if(IsKeyPressed(KEY_RIGHT)) {
-        if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
-    }
-
-    if (IsKeyPressed(KEY_UP)) {
+    if(IsKeyPressed(KEY_UP)) {
         if (textBuffer.cursorPos.y > 0) {
             int previousY = textBuffer.cursorPos.y;
             textBuffer.cursorPos.y--;
@@ -112,7 +115,7 @@ void KeyController(void) {
         }
     }
 
-    if (IsKeyPressed(KEY_DOWN)) {
+    if(IsKeyPressed(KEY_DOWN)) {
         if (textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
             int previousY = textBuffer.cursorPos.y;
             textBuffer.cursorPos.y++;
@@ -122,6 +125,35 @@ void KeyController(void) {
             }
             int cursorX = CalculateCursorPosX(previousY);
             textBuffer.cursorPos.x = cursorX;
+        }
+    }
+
+    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_LEFT)) {
+        if(textBuffer.cursorPos.x > 0) {
+            if(!textBuffer.hasSelection) {
+                textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+            }
+            textBuffer.cursorPos.x--;
+            textBuffer.selectionStart = textBuffer.cursorPos.x;
+        }
+    }
+
+    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_RIGHT)) {
+        if(textBuffer.cursorPos.x < textBuffer.length) {
+            if(!textBuffer.hasSelection) {
+                textBuffer.selectionStart = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+            }
+            textBuffer.cursorPos.x++;
+            textBuffer.selectionEnd = textBuffer.cursorPos.x;
+        }
+    }
+
+    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_C)) {
+        if(textBuffer.hasSelection) {
+            printf("selStart %d selEnd %d", textBuffer.selectionStart, textBuffer.selectionEnd);
+            textBuffer.hasSelection = false;
         }
     }
 }

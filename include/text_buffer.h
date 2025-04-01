@@ -8,6 +8,9 @@ typedef struct {
     Vector2 cursorPos;
     bool cursorVisible;
     int lineCount;
+    int selectionStart;
+    int selectionEnd;
+    bool hasSelection;
 } TextBuffer;
 
 typedef struct {
