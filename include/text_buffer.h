@@ -10,6 +10,8 @@ typedef struct {
     int lineCount;
     int selectionStart;
     int selectionEnd;
+    bool hasSelectionStarted;
+    bool hasAllSelected;
     bool hasSelection;
 } TextBuffer;
 

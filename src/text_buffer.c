@@ -14,6 +14,7 @@ LineInfo *lineInfos = NULL;
 double lastBlinkTime;
 Font font;
 int sidebarWidth = SIDEBAR_WIDTH;
+char *copiedText = NULL;
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
@@ -33,6 +34,8 @@ void InitializeTextBuffer(void) {
     textBuffer.lineCount = 0;
     textBuffer.selectionStart = 0;
     textBuffer.selectionEnd = 0;
+    textBuffer.hasSelectionStarted = false;
+    textBuffer.hasAllSelected = false;
     textBuffer.hasSelection = false;
 }
 
@@ -77,14 +80,18 @@ void KeyController(void) {
     }
 
     if(IsKeyPressed(KEY_BACKSPACE)) {
+        if(textBuffer.hasSelection && textBuffer.hasAllSelected) {
+            FreeTextBuffer();
+            InitializeTextBuffer();
+        }
         RemoveChar(&textBuffer);
     }
 
-    if(IsKeyPressed(KEY_LEFT)) {
+    if(IsKeyPressed(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
         if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
     }
 
-    if(IsKeyPressed(KEY_RIGHT)) {
+    if(IsKeyPressed(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
         if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
     }
 
@@ -130,30 +137,69 @@ void KeyController(void) {
 
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_LEFT)) {
         if(textBuffer.cursorPos.x > 0) {
-            if(!textBuffer.hasSelection) {
+            if(!textBuffer.hasSelectionStarted) {
                 textBuffer.selectionEnd = textBuffer.cursorPos.x;
-                textBuffer.hasSelection = true;
+                textBuffer.hasSelectionStarted = true;
+                textBuffer.hasAllSelected = false;
             }
             textBuffer.cursorPos.x--;
             textBuffer.selectionStart = textBuffer.cursorPos.x;
+            textBuffer.hasSelection = true;
         }
     }
 
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_RIGHT)) {
         if(textBuffer.cursorPos.x < textBuffer.length) {
-            if(!textBuffer.hasSelection) {
+            if(!textBuffer.hasSelectionStarted) {
                 textBuffer.selectionStart = textBuffer.cursorPos.x;
-                textBuffer.hasSelection = true;
+                textBuffer.hasSelectionStarted = true;
+                textBuffer.hasAllSelected = false;
             }
             textBuffer.cursorPos.x++;
             textBuffer.selectionEnd = textBuffer.cursorPos.x;
+            textBuffer.hasSelection = true;
         }
     }
 
     if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_C)) {
         if(textBuffer.hasSelection) {
-            printf("selStart %d selEnd %d", textBuffer.selectionStart, textBuffer.selectionEnd);
-            textBuffer.hasSelection = false;
+            int selectionLength = textBuffer.selectionEnd - textBuffer.selectionStart;
+            if(selectionLength > 0) {
+                if(copiedText != NULL) {
+                    free(copiedText);
+                }
+                copiedText = (char *)malloc(selectionLength + 1);
+                strncpy(copiedText, &textBuffer.text[textBuffer.selectionStart], selectionLength);
+                copiedText[selectionLength] = '\0';
+                textBuffer.hasSelectionStarted = false;
+            }
+        }
+    }
+
+    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_V)) {
+        if(copiedText != NULL) {
+            int copiedLength = strlen(copiedText);
+            if (textBuffer.length + copiedLength >= textBuffer.capacity) {
+                textBuffer.capacity = (textBuffer.length + copiedLength) * 2;
+                textBuffer.text = (char *)realloc(textBuffer.text, textBuffer.capacity);
+            }
+
+            memmove(&textBuffer.text[(int)textBuffer.cursorPos.x + copiedLength], &textBuffer.text[(int)textBuffer.cursorPos.x], textBuffer.length - textBuffer.cursorPos.x + 1);
+            memcpy(&textBuffer.text[(int)textBuffer.cursorPos.x], copiedText, copiedLength);
+
+            textBuffer.length += copiedLength;
+            textBuffer.cursorPos.x += copiedLength;
+            textBuffer.text[textBuffer.length] = '\0';
+        }
+    }
+
+    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A)) {
+        if(textBuffer.cursorPos.x > 0 && textBuffer.cursorPos.x <= textBuffer.length) {
+            textBuffer.selectionStart = 0;
+            textBuffer.selectionEnd = textBuffer.length;
+            textBuffer.hasSelectionStarted = false;
+            textBuffer.hasAllSelected = true;
+            textBuffer.hasSelection = true;
         }
     }
 }
