@@ -29,7 +29,7 @@ void InitializeTextBuffer(void) {
     textBuffer.capacity = 1024;
     textBuffer.cursorPos.x = 0;
     textBuffer.cursorPos.y = 0;
-    textBuffer.cursorVisible = false;
+    textBuffer.cursorVisible = true;
     textBuffer.text[0] = '\0';
     textBuffer.lineCount = 0;
     textBuffer.selectionStart = 0;
@@ -105,7 +105,7 @@ void KeyController(void) {
     if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_RIGHT)) {
         if(textBuffer.cursorPos.x > 0) {
             LineInfo *currentLine = &lineInfos[(int)textBuffer.cursorPos.y];
-            textBuffer.cursorPos.x = currentLine->lineEnd - 1; // lineEnd stores null terminator
+            textBuffer.cursorPos.x = currentLine->lineEnd; // lineEnd stores null terminator
         }
     }
 
@@ -142,6 +142,9 @@ void KeyController(void) {
                 textBuffer.hasSelectionStarted = true;
                 textBuffer.hasAllSelected = false;
             }
+            if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
+                textBuffer.cursorPos.y--;
+            }
             textBuffer.cursorPos.x--;
             textBuffer.selectionStart = textBuffer.cursorPos.x;
             textBuffer.hasSelection = true;
@@ -155,7 +158,12 @@ void KeyController(void) {
                 textBuffer.hasSelectionStarted = true;
                 textBuffer.hasAllSelected = false;
             }
-            textBuffer.cursorPos.x++;
+            if((textBuffer.cursorPos.x > lineInfos[(int)textBuffer.cursorPos.y].lineEnd - 1) && textBuffer.cursorPos.y < textBuffer.lineCount) {
+                textBuffer.cursorPos.y++;
+                textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+            } else {
+                textBuffer.cursorPos.x++;
+            }
             textBuffer.selectionEnd = textBuffer.cursorPos.x;
             textBuffer.hasSelection = true;
         }
@@ -257,12 +265,6 @@ void TextBufferController(void) {
         }
     }
 
-    double currentTime = GetTime();
-    if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
-        textBuffer.cursorVisible = !textBuffer.cursorVisible;
-        lastBlinkTime = currentTime;
-    }
-
     if(textBuffer.cursorVisible) {
         int cursorLineStart = 0;
         for(int i = 0; i < textBuffer.cursorPos.x; i++) {
@@ -280,6 +282,14 @@ void TextBufferController(void) {
         int cursorX = sidebarWidth + TEXT_MARGIN + textSize.x;
         int cursorY = TEXT_MARGIN + textBuffer.cursorPos.y * FONT_SIZE;
         DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
+    }
+}
+
+void BlinkCursor(void) {
+    double currentTime = GetTime();
+    if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
+        textBuffer.cursorVisible = !textBuffer.cursorVisible;
+        lastBlinkTime = currentTime;
     }
 }
 
