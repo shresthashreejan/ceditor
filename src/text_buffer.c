@@ -198,6 +198,11 @@ void KeyController(void) {
             textBuffer.length += copiedLength;
             textBuffer.cursorPos.x += copiedLength;
             textBuffer.text[textBuffer.length] = '\0';
+            for(int i = 0; i < copiedLength; i++) {
+                if(copiedText[i] == '\n') {
+                    textBuffer.cursorPos.y++;
+                }
+            }
         }
     }
 
