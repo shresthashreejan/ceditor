@@ -34,5 +34,7 @@ void FreeLineInfos(void);
 void FreeBufferMemory(void);
 int CalculateCursorPosX(int previousY);
 void BlinkCursor(void);
+void CalculateCursorPosition(int key);
+void CalculateSelection(int key);
 
 #endif

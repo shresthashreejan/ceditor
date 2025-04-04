@@ -95,7 +95,7 @@ void KeyController(void) {
     }
 
     if(IsKeyPressed(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
-        if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
+        CalculateCursorPosition(KEY_LEFT);
     }
 
     if(IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
@@ -103,14 +103,14 @@ void KeyController(void) {
         if(keyDownDelay >= KEY_DOWN_DELAY) {
             lastCursorUpdateTime += GetFrameTime();
             if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
-                if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
+                CalculateCursorPosition(KEY_LEFT);
                 lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
         }
     }
 
     if(IsKeyPressed(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
-        if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
+        CalculateCursorPosition(KEY_RIGHT);
     }
 
     if(IsKeyDown(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
@@ -118,13 +118,13 @@ void KeyController(void) {
         if(keyDownDelay >= KEY_DOWN_DELAY) {
             lastCursorUpdateTime += GetFrameTime();
             if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
-                if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
+                CalculateCursorPosition(KEY_RIGHT);
                 lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
         }
     }
 
-    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT)) {
+    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) {
         keyDownDelay = 0.0f;
     }
 
@@ -142,69 +142,63 @@ void KeyController(void) {
         }
     }
 
-    // TODO: Add key down support
     if(IsKeyPressed(KEY_UP)) {
-        if (textBuffer.cursorPos.y > 0) {
-            int previousY = textBuffer.cursorPos.y;
-            if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
-                textBuffer.cursorPos.y = previousY;
-                return;
-            } else {
-                textBuffer.cursorPos.y--;
+        CalculateCursorPosition(KEY_UP);
+    }
+
+    if(IsKeyDown(KEY_UP)) {
+        keyDownDelay += GetFrameTime();
+        if(keyDownDelay >= KEY_DOWN_DELAY) {
+            lastCursorUpdateTime += GetFrameTime();
+            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+                CalculateCursorPosition(KEY_UP);
+                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
-            int cursorX = CalculateCursorPosX(previousY);
-            textBuffer.cursorPos.x = cursorX;
         }
     }
 
-    // TODO: Add key down support
     if(IsKeyPressed(KEY_DOWN)) {
-        if (textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
-            int previousY = textBuffer.cursorPos.y;
-            if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
-                textBuffer.cursorPos.y = previousY;
-                return;
-            } else {
-                textBuffer.cursorPos.y++;
+        CalculateCursorPosition(KEY_DOWN);
+    }
+
+    if(IsKeyDown(KEY_DOWN)) {
+        keyDownDelay += GetFrameTime();
+        if(keyDownDelay >= KEY_DOWN_DELAY) {
+            lastCursorUpdateTime += GetFrameTime();
+            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+                CalculateCursorPosition(KEY_DOWN);
+                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
-            int cursorX = CalculateCursorPosX(previousY);
-            textBuffer.cursorPos.x = cursorX;
         }
     }
 
-    // TODO: Add key down support
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_LEFT)) {
-        if(textBuffer.cursorPos.x > 0) {
-            if(!textBuffer.hasSelectionStarted) {
-                textBuffer.selectionEnd = textBuffer.cursorPos.x;
-                textBuffer.hasSelectionStarted = true;
-                textBuffer.hasAllSelected = false;
+        CalculateSelection(KEY_LEFT);
+    }
+
+    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyDown(KEY_LEFT)) {
+        keyDownDelay += GetFrameTime();
+        if(keyDownDelay >= KEY_DOWN_DELAY) {
+            lastCursorUpdateTime += GetFrameTime();
+            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+                CalculateSelection(KEY_LEFT);
+                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
-            if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
-                textBuffer.cursorPos.y--;
-            }
-            textBuffer.cursorPos.x--;
-            textBuffer.selectionStart = textBuffer.cursorPos.x;
-            textBuffer.hasSelection = true;
         }
     }
 
-    // TODO: Add key down support
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_RIGHT)) {
-        if(textBuffer.cursorPos.x < textBuffer.length) {
-            if(!textBuffer.hasSelectionStarted) {
-                textBuffer.selectionStart = textBuffer.cursorPos.x;
-                textBuffer.hasSelectionStarted = true;
-                textBuffer.hasAllSelected = false;
+        CalculateSelection(KEY_RIGHT);
+    }
+
+    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyDown(KEY_RIGHT)) {
+        keyDownDelay += GetFrameTime();
+        if(keyDownDelay >= KEY_DOWN_DELAY) {
+            lastCursorUpdateTime += GetFrameTime();
+            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+                CalculateSelection(KEY_RIGHT);
+                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
-            if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
-                textBuffer.cursorPos.y++;
-                textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
-            } else {
-                textBuffer.cursorPos.x++;
-            }
-            textBuffer.selectionEnd = textBuffer.cursorPos.x;
-            textBuffer.hasSelection = true;
         }
     }
 
@@ -334,6 +328,96 @@ void BlinkCursor(void) {
     if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
         textBuffer.cursorVisible = !textBuffer.cursorVisible;
         lastBlinkTime = currentTime;
+    }
+}
+
+void CalculateCursorPosition(int key) {
+    switch(key) {
+        case KEY_LEFT:
+            if(textBuffer.cursorPos.x > 0) {
+                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
+                    textBuffer.cursorPos.y--;
+                }
+                textBuffer.cursorPos.x--;
+            }
+            break;
+        case KEY_RIGHT:
+            if(textBuffer.cursorPos.x < textBuffer.length) {
+                if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
+                    textBuffer.cursorPos.y++;
+                    textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+                } else {
+                    textBuffer.cursorPos.x++;
+                }
+            }
+            break;
+        case KEY_UP:
+            if(textBuffer.cursorPos.y > 0) {
+                int previousY = textBuffer.cursorPos.y;
+                if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
+                    textBuffer.cursorPos.y = previousY;
+                    return;
+                } else {
+                    textBuffer.cursorPos.y--;
+                }
+                int cursorX = CalculateCursorPosX(previousY);
+                textBuffer.cursorPos.x = cursorX;
+            }
+            break;
+        case KEY_DOWN:
+            if(textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
+                int previousY = textBuffer.cursorPos.y;
+                if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
+                    textBuffer.cursorPos.y = previousY;
+                    return;
+                } else {
+                    textBuffer.cursorPos.y++;
+                }
+                int cursorX = CalculateCursorPosX(previousY);
+                textBuffer.cursorPos.x = cursorX;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void CalculateSelection(int key) {
+    switch(key) {
+        case KEY_LEFT:
+            if(textBuffer.cursorPos.x > 0) {
+                if(!textBuffer.hasSelectionStarted) {
+                    textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.hasAllSelected = false;
+                }
+                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
+                    textBuffer.cursorPos.y--;
+                }
+                textBuffer.cursorPos.x--;
+                textBuffer.selectionStart = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+            }
+            break;
+        case KEY_RIGHT:
+            if(textBuffer.cursorPos.x < textBuffer.length) {
+                if(!textBuffer.hasSelectionStarted) {
+                    textBuffer.selectionStart = textBuffer.cursorPos.x;
+                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.hasAllSelected = false;
+                }
+                if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
+                    textBuffer.cursorPos.y++;
+                    textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+                } else {
+                    textBuffer.cursorPos.x++;
+                }
+                textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+            }
+            break;
+        default:
+            break;
     }
 }
 
