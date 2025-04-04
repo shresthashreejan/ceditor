@@ -10,5 +10,7 @@
 #define SIDEBAR_WIDTH 15
 #define SIDEBAR_COLOR GRAY
 #define SIDEBAR_MARGIN 2
+#define CURSOR_UPDATE_INTERVAL 0.01f
+#define KEY_DOWN_DELAY 0.5f
 
 #endif

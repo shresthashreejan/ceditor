@@ -8,13 +8,15 @@
 #include "constants.h"
 #include "config.h"
 
-TextBuffer textBuffer;
-int lineInfosCapacity = 0;
-LineInfo *lineInfos = NULL;
-double lastBlinkTime;
 Font font;
-int sidebarWidth = SIDEBAR_WIDTH;
+TextBuffer textBuffer;
+LineInfo *lineInfos = NULL;
 char *copiedText = NULL;
+int lineInfosCapacity = 0;
+int sidebarWidth = SIDEBAR_WIDTH;
+double lastBlinkTime;
+float lastCursorUpdateTime = 0.0f;
+float keyDownDelay = 0.0f;
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
@@ -83,16 +85,47 @@ void KeyController(void) {
         if(textBuffer.hasSelection && textBuffer.hasAllSelected) {
             FreeTextBuffer();
             InitializeTextBuffer();
+        } else {
+            RemoveChar(&textBuffer);
         }
-        RemoveChar(&textBuffer);
+    }
+
+    if(IsKeyPressed(KEY_ESCAPE)) {
+        if(textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
     }
 
     if(IsKeyPressed(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
         if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
     }
 
+    if(IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
+        keyDownDelay += GetFrameTime();
+        if(keyDownDelay >= KEY_DOWN_DELAY) {
+            lastCursorUpdateTime += GetFrameTime();
+            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+                if(textBuffer.cursorPos.x > 0) textBuffer.cursorPos.x--;
+                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
+            }
+        }
+    }
+
     if(IsKeyPressed(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
         if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
+    }
+
+    if(IsKeyDown(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
+        keyDownDelay += GetFrameTime();
+        if(keyDownDelay >= KEY_DOWN_DELAY) {
+            lastCursorUpdateTime += GetFrameTime();
+            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+                if(textBuffer.cursorPos.x < textBuffer.length) textBuffer.cursorPos.x++;
+                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
+            }
+        }
+    }
+
+    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT)) {
+        keyDownDelay = 0.0f;
     }
 
     if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_LEFT)) {
@@ -105,17 +138,18 @@ void KeyController(void) {
     if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_RIGHT)) {
         if(textBuffer.cursorPos.x > 0) {
             LineInfo *currentLine = &lineInfos[(int)textBuffer.cursorPos.y];
-            textBuffer.cursorPos.x = currentLine->lineEnd; // lineEnd stores null terminator
+            textBuffer.cursorPos.x = currentLine->lineEnd;
         }
     }
 
     if(IsKeyPressed(KEY_UP)) {
         if (textBuffer.cursorPos.y > 0) {
             int previousY = textBuffer.cursorPos.y;
-            textBuffer.cursorPos.y--;
             if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
                 textBuffer.cursorPos.y = previousY;
                 return;
+            } else {
+                textBuffer.cursorPos.y--;
             }
             int cursorX = CalculateCursorPosX(previousY);
             textBuffer.cursorPos.x = cursorX;
@@ -125,16 +159,18 @@ void KeyController(void) {
     if(IsKeyPressed(KEY_DOWN)) {
         if (textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
             int previousY = textBuffer.cursorPos.y;
-            textBuffer.cursorPos.y++;
             if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
                 textBuffer.cursorPos.y = previousY;
                 return;
+            } else {
+                textBuffer.cursorPos.y++;
             }
             int cursorX = CalculateCursorPosX(previousY);
             textBuffer.cursorPos.x = cursorX;
         }
     }
 
+    // TODO: Add left key down support for selections
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_LEFT)) {
         if(textBuffer.cursorPos.x > 0) {
             if(!textBuffer.hasSelectionStarted) {
@@ -151,6 +187,7 @@ void KeyController(void) {
         }
     }
 
+    // TODO: Add right key down support for selections
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_RIGHT)) {
         if(textBuffer.cursorPos.x < textBuffer.length) {
             if(!textBuffer.hasSelectionStarted) {
@@ -158,7 +195,7 @@ void KeyController(void) {
                 textBuffer.hasSelectionStarted = true;
                 textBuffer.hasAllSelected = false;
             }
-            if((textBuffer.cursorPos.x > lineInfos[(int)textBuffer.cursorPos.y].lineEnd - 1) && textBuffer.cursorPos.y < textBuffer.lineCount) {
+            if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
                 textBuffer.cursorPos.y++;
                 textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
             } else {
@@ -222,7 +259,7 @@ int CalculateCursorPosX(int previousY) {
     LineInfo *newLine = &lineInfos[(int)textBuffer.cursorPos.y];
     int offset = textBuffer.cursorPos.x - currentLine->lineStart;
     int newXPos = newLine->lineStart + offset;
-    if (newXPos > newLine->lineEnd) {
+    if(newXPos > newLine->lineEnd) {
         newXPos = newLine->lineEnd;
     }
     return newXPos;
