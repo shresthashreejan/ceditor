@@ -142,6 +142,7 @@ void KeyController(void) {
         }
     }
 
+    // TODO: Add key down support
     if(IsKeyPressed(KEY_UP)) {
         if (textBuffer.cursorPos.y > 0) {
             int previousY = textBuffer.cursorPos.y;
@@ -156,6 +157,7 @@ void KeyController(void) {
         }
     }
 
+    // TODO: Add key down support
     if(IsKeyPressed(KEY_DOWN)) {
         if (textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
             int previousY = textBuffer.cursorPos.y;
@@ -170,7 +172,7 @@ void KeyController(void) {
         }
     }
 
-    // TODO: Add left key down support for selections
+    // TODO: Add key down support
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_LEFT)) {
         if(textBuffer.cursorPos.x > 0) {
             if(!textBuffer.hasSelectionStarted) {
@@ -187,7 +189,7 @@ void KeyController(void) {
         }
     }
 
-    // TODO: Add right key down support for selections
+    // TODO: Add key down support
     if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_RIGHT)) {
         if(textBuffer.cursorPos.x < textBuffer.length) {
             if(!textBuffer.hasSelectionStarted) {
