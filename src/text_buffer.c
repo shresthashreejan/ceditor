@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "raylib.h"
+#include "raygui.h"
 
 #include "text_buffer.h"
 #include "constants.h"
