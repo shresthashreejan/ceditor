@@ -311,6 +311,7 @@ void TextBufferController(void) {
 
     viewport = (Rectangle){sidebarWidth, 0, GetScreenWidth() - sidebarWidth, GetScreenHeight()};
     totalView = (Rectangle){0, 0, totalWidth, totalHeight};
+    UpdateView();
     GuiScrollPanel(viewport, NULL, totalView, &scroll, &panelView);
     DrawRectangle(0, 0, sidebarWidth, GetScreenHeight(), SIDEBAR_COLOR);
 
@@ -370,11 +371,10 @@ void TextBufferController(void) {
 // FIX THIS FUNCTION
 void UpdateView(void) {
     int totalPossibleLines = GetScreenHeight() / (FONT_SIZE + TEXT_MARGIN);
-    if(textBuffer.cursorPos.y > ((panelView.height - 1) / 21)) {
+    if(textBuffer.cursorPos.y + 1 > lastLineOnView) {
         scroll.y -= FONT_SIZE + TEXT_MARGIN;
         firstLineOnView = lastLineOnView - (totalPossibleLines - 1);
-    }
-    if(textBuffer.cursorPos.y < firstLineOnView) {
+    } else if(textBuffer.cursorPos.y < firstLineOnView) {
         scroll.y += FONT_SIZE + TEXT_MARGIN;
     }
 }
