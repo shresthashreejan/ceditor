@@ -4,6 +4,7 @@
 
 #include "raylib.h"
 #include "raygui.h"
+#include "raymath.h"
 
 #include "text_buffer.h"
 #include "constants.h"
@@ -18,6 +19,11 @@ int sidebarWidth = SIDEBAR_WIDTH;
 double lastBlinkTime;
 float lastCursorUpdateTime = 0.0f;
 float keyDownDelay = 0.0f;
+float maxLineWidth = 0;
+Vector2 scroll = {0, 0};
+Rectangle viewport = {0};
+Rectangle totalView = {0};
+Rectangle panelView = {0};
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
@@ -262,47 +268,81 @@ int CalculateCursorPosX(int previousY) {
     return newXPos;
 }
 
-void TextBufferController(void) {
-    DrawRectangle(0, 0, sidebarWidth, GetScreenHeight(), SIDEBAR_COLOR);
+void ProcessLines(void) {
     int lineStart = 0;
+    maxLineWidth = 0;
     textBuffer.lineCount = 0;
     for(int i = 0; i <= textBuffer.length; i++) {
         if(textBuffer.text[i] == '\n' || i == textBuffer.length) {
             if(textBuffer.lineCount >= lineInfosCapacity) {
-                int newCapacity = lineInfosCapacity * 2;
-                lineInfos = (LineInfo *)realloc(lineInfos, newCapacity * sizeof(LineInfo));
-                lineInfosCapacity = newCapacity;
+                lineInfosCapacity *= 2;
+                lineInfos = (LineInfo *)realloc(lineInfos, lineInfosCapacity * sizeof(LineInfo));
             }
 
-            int lineEnd = i;
-            int lineLength = lineEnd - lineStart;
+            lineInfos[textBuffer.lineCount] = (LineInfo){
+                .lineCount = textBuffer.lineCount,
+                .lineStart = lineStart,
+                .lineEnd = i,
+                .lineLength = i - lineStart
+            };
+
             char line[1024];
-            strncpy(line, &textBuffer.text[lineStart], lineLength);
-            line[lineLength] = '\0';
-
-            int lineNumber = textBuffer.lineCount + 1;
-            char lineNumberStr[16];
-            snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", lineNumber);
-            Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
-            if(numberSize.x >= sidebarWidth) {
-                sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
-            }
-            int xPos = sidebarWidth - numberSize.x - SIDEBAR_MARGIN;
-            int yPos = TEXT_MARGIN + textBuffer.lineCount * FONT_SIZE;
-            DrawTextEx(font, lineNumberStr, (Vector2){xPos, yPos}, FONT_SIZE, TEXT_MARGIN, BLACK);
-
-            Vector2 linePos = {sidebarWidth + TEXT_MARGIN, yPos};
-            DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
-
-            lineInfos[textBuffer.lineCount].lineCount = textBuffer.lineCount;
-            lineInfos[textBuffer.lineCount].lineLength = lineLength;
-            lineInfos[textBuffer.lineCount].lineStart = lineStart;
-            lineInfos[textBuffer.lineCount].lineEnd = lineEnd;
+            strncpy(line, &textBuffer.text[lineStart], lineInfos[textBuffer.lineCount].lineLength);
+            line[lineInfos[textBuffer.lineCount].lineLength] = '\0';
+            Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
+            if(textSize.x > maxLineWidth) maxLineWidth = textSize.x;
 
             lineStart = i + 1;
             textBuffer.lineCount++;
         }
     }
+}
+
+void TextBufferController(void) {
+    if(!textBuffer.text) return;
+
+    ProcessLines();
+
+    float lineHeight = FONT_SIZE + TEXT_MARGIN;
+    float totalWidth = maxLineWidth + (2 * TEXT_MARGIN);
+    float totalHeight = (textBuffer.lineCount * lineHeight) + TEXT_MARGIN;
+
+    viewport = (Rectangle){sidebarWidth, 0, GetScreenWidth() - sidebarWidth, GetScreenHeight()};
+    totalView = (Rectangle){0, 0, totalWidth, totalHeight};
+    GuiScrollPanel(viewport, NULL, totalView, &scroll, &panelView);
+    DrawRectangle(0, 0, sidebarWidth, GetScreenHeight(), SIDEBAR_COLOR);
+
+    BeginScissorMode(0, 0, sidebarWidth, GetScreenHeight());
+        for (int i = 0; i < textBuffer.lineCount; i++) {
+            char lineNumberStr[16];
+            snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", i + 1);
+            Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
+            if(numberSize.x >= sidebarWidth) {
+                sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
+            }
+            Vector2 linePos = {
+                sidebarWidth - numberSize.x - SIDEBAR_MARGIN,
+                (i * lineHeight) + scroll.y
+            };
+            DrawTextEx(font, lineNumberStr, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
+        }
+    EndScissorMode();
+
+    BeginScissorMode(panelView.x, panelView.y, panelView.width, panelView.height);
+        for (int i = 0; i < textBuffer.lineCount; i++) {
+            if (i >= lineInfosCapacity) break;
+
+            char line[1024];
+            strncpy(line, &textBuffer.text[lineInfos[i].lineStart], lineInfos[i].lineLength);
+            line[lineInfos[i].lineLength] = '\0';
+
+            Vector2 linePos = {
+                sidebarWidth + TEXT_MARGIN + scroll.x,
+                (i * lineHeight) + scroll.y
+            };
+            DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
+        }
+    EndScissorMode();
 
     if(textBuffer.cursorVisible) {
         int cursorLineStart = 0;
@@ -318,8 +358,8 @@ void TextBufferController(void) {
         currentLine[charsInLine] = '\0';
 
         Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
-        int cursorX = sidebarWidth + TEXT_MARGIN + textSize.x;
-        int cursorY = TEXT_MARGIN + textBuffer.cursorPos.y * FONT_SIZE;
+        int cursorX = sidebarWidth + TEXT_MARGIN + textSize.x + scroll.x;
+        int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight) + scroll.y;
         DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
     }
 }

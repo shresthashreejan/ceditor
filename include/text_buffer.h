@@ -36,5 +36,6 @@ int CalculateCursorPosX(int previousY);
 void BlinkCursor(void);
 void CalculateCursorPosition(int key);
 void CalculateSelection(int key);
+void ProcessLines(void);
 
 #endif
