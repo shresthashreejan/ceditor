@@ -24,6 +24,8 @@ Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
 Rectangle totalView = {0};
 Rectangle panelView = {0};
+int lastLineOnView = 0;
+int firstLineOnView = 0;
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
@@ -325,6 +327,7 @@ void TextBufferController(void) {
                 (i * lineHeight) + scroll.y
             };
             DrawTextEx(font, lineNumberStr, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
+            lastLineOnView = i + 1;
         }
     EndScissorMode();
 
@@ -364,11 +367,15 @@ void TextBufferController(void) {
     }
 }
 
-void BlinkCursor(void) {
-    double currentTime = GetTime();
-    if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
-        textBuffer.cursorVisible = !textBuffer.cursorVisible;
-        lastBlinkTime = currentTime;
+// FIX THIS FUNCTION
+void UpdateView(void) {
+    int totalPossibleLines = GetScreenHeight() / (FONT_SIZE + TEXT_MARGIN);
+    if(textBuffer.cursorPos.y > ((panelView.height - 1) / 21)) {
+        scroll.y -= FONT_SIZE + TEXT_MARGIN;
+        firstLineOnView = lastLineOnView - (totalPossibleLines - 1);
+    }
+    if(textBuffer.cursorPos.y < firstLineOnView) {
+        scroll.y += FONT_SIZE + TEXT_MARGIN;
     }
 }
 
@@ -459,6 +466,14 @@ void CalculateSelection(int key) {
             break;
         default:
             break;
+    }
+}
+
+void BlinkCursor(void) {
+    double currentTime = GetTime();
+    if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
+        textBuffer.cursorVisible = !textBuffer.cursorVisible;
+        lastBlinkTime = currentTime;
     }
 }
 

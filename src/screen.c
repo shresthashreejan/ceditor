@@ -10,6 +10,7 @@ void ScreenController(void) {
     ClearBackground(RAYWHITE);
     KeyController();
     TextBufferController();
+    UpdateView();
     RenderFrameRate();
 }
 
