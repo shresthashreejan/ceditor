@@ -1,6 +1,8 @@
 #ifndef TEXT_BUFFER_H_
 #define TEXT_BUFFER_H_
 
+extern const char *filePath;
+
 typedef struct {
     char *text;
     int length;
@@ -38,5 +40,7 @@ void CalculateCursorPosition(int key);
 void CalculateSelection(int key);
 void ProcessLines(void);
 void UpdateView(void);
+void LoadFile(void);
+void SaveFile(void);
 
 #endif

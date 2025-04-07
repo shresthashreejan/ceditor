@@ -26,6 +26,7 @@ Rectangle totalView = {0};
 Rectangle panelView = {0};
 int lastLineOnView = 0;
 int firstLineOnView = 0;
+const char *filePath = NULL;
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
@@ -96,6 +97,8 @@ void KeyController(void) {
             InitializeTextBuffer();
         } else {
             RemoveChar(&textBuffer);
+            // TODO: Proper cursor position y calculation
+            // CalculateCursorPosition(KEY_BACKSPACE);
         }
     }
 
@@ -249,13 +252,17 @@ void KeyController(void) {
     }
 
     if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A)) {
-        if(textBuffer.cursorPos.x > 0 && textBuffer.cursorPos.x <= textBuffer.length) {
+        if(textBuffer.cursorPos.x >= 0 && textBuffer.cursorPos.x <= textBuffer.length) {
             textBuffer.selectionStart = 0;
             textBuffer.selectionEnd = textBuffer.length;
             textBuffer.hasSelectionStarted = false;
             textBuffer.hasAllSelected = true;
             textBuffer.hasSelection = true;
         }
+    }
+
+    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_S)) {
+        SaveFile();
     }
 }
 
@@ -311,7 +318,7 @@ void TextBufferController(void) {
 
     viewport = (Rectangle){sidebarWidth, 0, GetScreenWidth() - sidebarWidth, GetScreenHeight()};
     totalView = (Rectangle){0, 0, totalWidth, totalHeight};
-    UpdateView();
+    // UpdateView();
     GuiScrollPanel(viewport, NULL, totalView, &scroll, &panelView);
     DrawRectangle(0, 0, sidebarWidth, GetScreenHeight(), SIDEBAR_COLOR);
 
@@ -328,7 +335,7 @@ void TextBufferController(void) {
                 (i * lineHeight) + scroll.y
             };
             DrawTextEx(font, lineNumberStr, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
-            lastLineOnView = i + 1;
+            lastLineOnView = i + 1; // Stores current last line rendered on screen
         }
     EndScissorMode();
 
@@ -368,14 +375,14 @@ void TextBufferController(void) {
     }
 }
 
-// FIX THIS FUNCTION
+// TODO: Fix this function
 void UpdateView(void) {
-    int totalPossibleLines = GetScreenHeight() / (FONT_SIZE + TEXT_MARGIN);
+    int totalPossibleLines = GetScreenHeight() / (FONT_SIZE + TEXT_MARGIN); // Stores maximum number of lines visible based on screen height
     if(textBuffer.cursorPos.y + 1 > lastLineOnView) {
-        scroll.y -= FONT_SIZE + TEXT_MARGIN;
-        firstLineOnView = lastLineOnView - (totalPossibleLines - 1);
+        scroll.y -= FONT_SIZE + TEXT_MARGIN; // This does NOT work
+        firstLineOnView = lastLineOnView - (totalPossibleLines - 1); // Stores current first line rendered on screen
     } else if(textBuffer.cursorPos.y < firstLineOnView) {
-        scroll.y += FONT_SIZE + TEXT_MARGIN;
+        scroll.y += FONT_SIZE + TEXT_MARGIN; // This does NOT work
     }
 }
 
@@ -425,6 +432,13 @@ void CalculateCursorPosition(int key) {
                 textBuffer.cursorPos.x = cursorX;
             }
             break;
+        case KEY_BACKSPACE:
+            if(textBuffer.cursorPos.x > 0) {
+                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
+                    textBuffer.cursorPos.y--;
+                }
+            }
+            break;
         default:
             break;
     }
@@ -469,6 +483,58 @@ void CalculateSelection(int key) {
     }
 }
 
+void LoadFile(void) {
+    FILE *file = fopen(filePath, "r");
+    if(file == NULL) {
+        printf("Error: Unable to open file %s\n", filePath);
+        return;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char *fileContent = (char *)malloc(fileSize + 1);
+    if(fileContent == NULL) {
+        printf("Error: Memory allocation failed for file content\n");
+        fclose(file);
+        return;
+    }
+
+    fread(fileContent, 1, fileSize, file);
+    fileContent[fileSize] = '\0';
+    fclose(file);
+
+    free(textBuffer.text);
+    textBuffer.text = fileContent;
+    textBuffer.length = fileSize;
+    textBuffer.capacity = fileSize + 1;
+    textBuffer.cursorPos.x = 0;
+    textBuffer.cursorPos.y = 0;
+    textBuffer.cursorVisible = true;
+    textBuffer.lineCount = 0;
+    textBuffer.selectionStart = 0;
+    textBuffer.selectionEnd = 0;
+    textBuffer.hasSelectionStarted = false;
+    textBuffer.hasAllSelected = false;
+    textBuffer.hasSelection = false;
+
+    ProcessLines();
+}
+
+void SaveFile(void) {
+    FILE *file = fopen(filePath, "w");
+    if(file == NULL) {
+        printf("Error: Unable to open file %s for saving\n", filePath);
+        return;
+    }
+
+    fwrite(textBuffer.text, sizeof(char), textBuffer.length, file);
+    fclose(file);
+    printf("File saved to %s\n", filePath);
+}
+
+// TODO: Needs proper implementation
 void BlinkCursor(void) {
     double currentTime = GetTime();
     if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
