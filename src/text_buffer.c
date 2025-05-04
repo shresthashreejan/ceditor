@@ -301,6 +301,7 @@ void RenderTextBuffer(void)
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
 {
     BeginScissorMode(0, 0, sidebarWidth, GetScreenHeight());
+        if(lastVisibleLine == 0) lastVisibleLine += 1;
         for(int i = firstVisibleLine; i < lastVisibleLine; i++) {
             char lineNumberStr[16];
             snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", i + 1);
@@ -353,6 +354,7 @@ void DrawCursor(float lineHeight)
         int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight) + scroll.y;
         DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, CURSOR_COLOR);
     }
+    BlinkCursor();
 }
 
 void TextBufferController(void) {

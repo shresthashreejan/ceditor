@@ -3,13 +3,11 @@ CFLAGS = -I include/ -std=c99 -Wall -Wextra -pedantic
 LDFLAGS = -lraylib -lGL -lm -lpthread
 
 BUILD = build
-
 OBJ = ${BUILD}/main.o ${BUILD}/raygui.o ${BUILD}/config.o ${BUILD}/screen.o ${BUILD}/text_buffer.o
+TARGET = ${BUILD}/ceditor
 
-OUT = ${BUILD}/ceditor
-
-$(OUT): $(OBJ)
-	$(CC) $(OBJ) -o $(OUT) $(LDFLAGS)
+$(TARGET): $(OBJ)
+	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
 	$(MAKE) clean_objects
 
 ${BUILD}/main.o: src/main.c
@@ -31,4 +29,4 @@ clean_objects:
 	rm -f $(OBJ)
 
 clean:
-	rm -f $(OBJ) $(OUT)
+	rm -f $(OBJ) $(TARGET)
