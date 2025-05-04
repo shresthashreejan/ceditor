@@ -42,5 +42,7 @@ void ProcessLines(void);
 void UpdateView(void);
 void LoadFile(void);
 void SaveFile(void);
+void ProcessKey(int key, bool ctrl, bool shift);
+void ProcessKeyDownMovement(int key, bool shift);
 
 #endif

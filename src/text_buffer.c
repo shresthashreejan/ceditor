@@ -85,184 +85,151 @@ void KeyController(void) {
         }
         key = GetCharPressed();
     }
+    bool ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
+    bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
 
-    if(IsKeyPressed(KEY_ENTER)) {
-        InsertChar(&textBuffer, '\n');
-        textBuffer.cursorPos.y++;
-    }
-
-    if(IsKeyPressed(KEY_BACKSPACE)) {
-        if(textBuffer.hasSelection && textBuffer.hasAllSelected) {
-            FreeTextBuffer();
-            InitializeTextBuffer();
-        } else {
-            RemoveChar(&textBuffer);
-            // TODO: Proper cursor position y calculation
-            // CalculateCursorPosition(KEY_BACKSPACE);
-        }
-    }
-
-    if(IsKeyPressed(KEY_ESCAPE)) {
-        if(textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
-    }
-
-    if(IsKeyPressed(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
-        CalculateCursorPosition(KEY_LEFT);
-    }
-
-    if(IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
-        keyDownDelay += GetFrameTime();
-        if(keyDownDelay >= KEY_DOWN_DELAY) {
-            lastCursorUpdateTime += GetFrameTime();
-            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
-                CalculateCursorPosition(KEY_LEFT);
-                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
-            }
-        }
-    }
-
-    if(IsKeyPressed(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
-        CalculateCursorPosition(KEY_RIGHT);
-    }
-
-    if(IsKeyDown(KEY_RIGHT) && !IsKeyDown(KEY_LEFT_SHIFT) && !IsKeyDown(KEY_RIGHT_SHIFT)) {
-        keyDownDelay += GetFrameTime();
-        if(keyDownDelay >= KEY_DOWN_DELAY) {
-            lastCursorUpdateTime += GetFrameTime();
-            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
-                CalculateCursorPosition(KEY_RIGHT);
-                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
-            }
-        }
-    }
-
-    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) {
+    ProcessKey(key, ctrl, shift);
+    if(IsKeyDown(KEY_UP)) ProcessKeyDownMovement(KEY_UP, shift);
+    if(IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, shift);
+    if(IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, shift);
+    if(IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, shift);
+    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN))
+    {
         keyDownDelay = 0.0f;
     }
 
-    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_LEFT)) {
-        if(textBuffer.cursorPos.x > 0) {
-            LineInfo *currentLine = &lineInfos[(int)textBuffer.cursorPos.y];
-            textBuffer.cursorPos.x = currentLine->lineStart;
-        }
-    }
+}
 
-    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_RIGHT)) {
-        if(textBuffer.cursorPos.x > 0) {
-            LineInfo *currentLine = &lineInfos[(int)textBuffer.cursorPos.y];
-            textBuffer.cursorPos.x = currentLine->lineEnd;
-        }
-    }
+void ProcessKey(int key, bool ctrl, bool shift)
+{
+    switch(key)
+    {
+        case KEY_ENTER:
+            InsertChar(&textBuffer, '\n');
+            textBuffer.cursorPos.y++;
+            break;
 
-    if(IsKeyPressed(KEY_UP)) {
-        CalculateCursorPosition(KEY_UP);
-    }
-
-    if(IsKeyDown(KEY_UP)) {
-        keyDownDelay += GetFrameTime();
-        if(keyDownDelay >= KEY_DOWN_DELAY) {
-            lastCursorUpdateTime += GetFrameTime();
-            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
-                CalculateCursorPosition(KEY_UP);
-                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
+        case KEY_BACKSPACE:
+            if(textBuffer.hasSelection && textBuffer.hasAllSelected)
+            {
+                FreeTextBuffer();
+                InitializeTextBuffer();
             }
-        }
-    }
-
-    if(IsKeyPressed(KEY_DOWN)) {
-        CalculateCursorPosition(KEY_DOWN);
-    }
-
-    if(IsKeyDown(KEY_DOWN)) {
-        keyDownDelay += GetFrameTime();
-        if(keyDownDelay >= KEY_DOWN_DELAY) {
-            lastCursorUpdateTime += GetFrameTime();
-            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
-                CalculateCursorPosition(KEY_DOWN);
-                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
+            else
+            {
+                RemoveChar(&textBuffer);
+                // TODO: Proper cursor position y calculation
+                // CalculateCursorPosition(KEY_BACKSPACE);
             }
-        }
-    }
+            break;
 
-    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_LEFT)) {
-        CalculateSelection(KEY_LEFT);
-    }
+        case KEY_ESCAPE:
+            if(textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
+            break;
 
-    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyDown(KEY_LEFT)) {
-        keyDownDelay += GetFrameTime();
-        if(keyDownDelay >= KEY_DOWN_DELAY) {
-            lastCursorUpdateTime += GetFrameTime();
-            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+        case KEY_UP:
+            CalculateCursorPosition(KEY_UP);
+            break;
+
+        case KEY_DOWN:
+            CalculateCursorPosition(KEY_DOWN);
+            break;
+
+        case KEY_LEFT:
+            if(ctrl)
+            {
+                textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+            }
+            else if(shift)
+            {
                 CalculateSelection(KEY_LEFT);
-                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
-        }
-    }
+            else
+            {
+                CalculateCursorPosition(KEY_LEFT);
+            }
+            break;
 
-    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_RIGHT)) {
-        CalculateSelection(KEY_RIGHT);
-    }
-
-    if((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyDown(KEY_RIGHT)) {
-        keyDownDelay += GetFrameTime();
-        if(keyDownDelay >= KEY_DOWN_DELAY) {
-            lastCursorUpdateTime += GetFrameTime();
-            if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL) {
+        case KEY_RIGHT:
+            if(ctrl)
+            {
+                textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineEnd;
+            }
+            else if(shift)
+            {
                 CalculateSelection(KEY_RIGHT);
-                lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
             }
-        }
-    }
-
-    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_C)) {
-        if(textBuffer.hasSelection) {
-            int selectionLength = textBuffer.selectionEnd - textBuffer.selectionStart;
-            if(selectionLength > 0) {
-                if(copiedText != NULL) {
-                    free(copiedText);
-                }
-                copiedText = (char *)malloc(selectionLength + 1);
-                strncpy(copiedText, &textBuffer.text[textBuffer.selectionStart], selectionLength);
-                copiedText[selectionLength] = '\0';
-                textBuffer.hasSelectionStarted = false;
+            else
+            {
+                CalculateCursorPosition(KEY_RIGHT);
             }
-        }
-    }
+            break;
 
-    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_V)) {
-        if(copiedText != NULL) {
-            int copiedLength = strlen(copiedText);
-            if (textBuffer.length + copiedLength >= textBuffer.capacity) {
-                textBuffer.capacity = (textBuffer.length + copiedLength) * 2;
-                textBuffer.text = (char *)realloc(textBuffer.text, textBuffer.capacity);
-            }
-
-            memmove(&textBuffer.text[(int)textBuffer.cursorPos.x + copiedLength], &textBuffer.text[(int)textBuffer.cursorPos.x], textBuffer.length - textBuffer.cursorPos.x + 1);
-            memcpy(&textBuffer.text[(int)textBuffer.cursorPos.x], copiedText, copiedLength);
-
-            textBuffer.length += copiedLength;
-            textBuffer.cursorPos.x += copiedLength;
-            textBuffer.text[textBuffer.length] = '\0';
-            for(int i = 0; i < copiedLength; i++) {
-                if(copiedText[i] == '\n') {
-                    textBuffer.cursorPos.y++;
+        case KEY_C:
+            if(ctrl && textBuffer.hasSelection)
+            {
+                int selectionLength = textBuffer.selectionEnd - textBuffer.selectionStart;
+                if(selectionLength > 0)
+                {
+                    if(copiedText != NULL) free(copiedText);
+                    copiedText = (char *)malloc(selectionLength + 1);
+                    strncpy(copiedText, &textBuffer.text[textBuffer.selectionStart], selectionLength);
+                    copiedText[selectionLength] = '\0';
+                    textBuffer.hasSelectionStarted = false;
                 }
             }
-        }
-    }
+            break;
 
-    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_A)) {
-        if(textBuffer.cursorPos.x >= 0 && textBuffer.cursorPos.x <= textBuffer.length) {
-            textBuffer.selectionStart = 0;
-            textBuffer.selectionEnd = textBuffer.length;
-            textBuffer.hasSelectionStarted = false;
-            textBuffer.hasAllSelected = true;
-            textBuffer.hasSelection = true;
-        }
-    }
+        case KEY_V:
+            if(ctrl && copiedText != NULL)
+            {
+                int copiedLength = strlen(copiedText);
+                if(textBuffer.length + copiedLength >= textBuffer.capacity)
+                {
+                    textBuffer.capacity = (textBuffer.length + copiedLength) * 2;
+                    textBuffer.text = (char *)realloc(textBuffer.text, textBuffer.capacity);
+                }
 
-    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_S)) {
-        SaveFile();
+                memmove(&textBuffer.text[(int)textBuffer.cursorPos.x + copiedLength], &textBuffer.text[(int)textBuffer.cursorPos.x], textBuffer.length - textBuffer.cursorPos.x + 1);
+                memcpy(&textBuffer.text[(int)textBuffer.cursorPos.x], copiedText, copiedLength);
+
+                textBuffer.length += copiedLength;
+                textBuffer.cursorPos.x += copiedLength;
+                textBuffer.text[textBuffer.length] = '\0';
+                for(int i = 0; i < copiedLength; i++)
+                {
+                    if(copiedText[i] == '\n')
+                    {
+                        textBuffer.cursorPos.y++;
+                    }
+                }
+            }
+            break;
+
+        case KEY_A:
+            if(ctrl) CalculateSelection(KEY_A);
+            break;
+
+        case KEY_S:
+            if(ctrl) SaveFile();
+            break;
+
+        default:
+            break;
+    }
+}
+
+void ProcessKeyDownMovement(int key, bool shift)
+{
+    keyDownDelay += GetFrameTime();
+    if(keyDownDelay >= KEY_DOWN_DELAY)
+    {
+        lastCursorUpdateTime += GetFrameTime();
+        if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL)
+        {
+            if(shift) CalculateSelection(key); else CalculateCursorPosition(key);
+            lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
+        }
     }
 }
 
@@ -444,42 +411,62 @@ void CalculateCursorPosition(int key) {
     }
 }
 
-void CalculateSelection(int key) {
-    switch(key) {
-        case KEY_LEFT:
-            if(textBuffer.cursorPos.x > 0) {
-                if(!textBuffer.hasSelectionStarted) {
+void CalculateSelection(int key)
+{
+    if(!textBuffer.hasSelectionStarted)
+    {
+        switch(key)
+        {
+            case KEY_LEFT:
+                if(textBuffer.cursorPos.x > 0)
+                {
                     textBuffer.selectionEnd = textBuffer.cursorPos.x;
-                    textBuffer.hasSelectionStarted = true;
-                    textBuffer.hasAllSelected = false;
-                }
-                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
-                    textBuffer.cursorPos.y--;
-                }
-                textBuffer.cursorPos.x--;
-                textBuffer.selectionStart = textBuffer.cursorPos.x;
-                textBuffer.hasSelection = true;
-            }
-            break;
-        case KEY_RIGHT:
-            if(textBuffer.cursorPos.x < textBuffer.length) {
-                if(!textBuffer.hasSelectionStarted) {
+                    if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart)
+                    {
+                        textBuffer.cursorPos.y--;
+                    }
+                    textBuffer.cursorPos.x--;
                     textBuffer.selectionStart = textBuffer.cursorPos.x;
                     textBuffer.hasSelectionStarted = true;
+                    textBuffer.hasSelection = true;
                     textBuffer.hasAllSelected = false;
                 }
-                if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
-                    textBuffer.cursorPos.y++;
-                    textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
-                } else {
-                    textBuffer.cursorPos.x++;
+                break;
+
+            case KEY_RIGHT:
+                if(textBuffer.cursorPos.x < textBuffer.length)
+                {
+                    textBuffer.selectionStart = textBuffer.cursorPos.x;
+                    if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                    {
+                        textBuffer.cursorPos.y++;
+                        textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+                    }
+                    else
+                    {
+                        textBuffer.cursorPos.x++;
+                    }
+                    textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.hasSelection = true;
+                    textBuffer.hasAllSelected = false;
                 }
-                textBuffer.selectionEnd = textBuffer.cursorPos.x;
-                textBuffer.hasSelection = true;
-            }
-            break;
-        default:
-            break;
+                break;
+
+            case KEY_A:
+                if(textBuffer.cursorPos.x >= 0 && textBuffer.cursorPos.x <= textBuffer.length)
+                {
+                    textBuffer.selectionStart = 0;
+                    textBuffer.selectionEnd = textBuffer.length;
+                    textBuffer.hasSelectionStarted = false;
+                    textBuffer.hasSelection = true;
+                    textBuffer.hasAllSelected = true;
+                }
+                break;
+
+            default:
+                break;
+        }
     }
 }
 
