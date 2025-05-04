@@ -29,7 +29,7 @@ void InitializeTextBuffer(void);
 void InitializeLineInfos(void);
 void InsertChar(TextBuffer *buffer, char ch);
 void RemoveChar(TextBuffer *buffer);
-void KeyController(void);
+bool KeyController(void);
 void TextBufferController(void);
 void FreeTextBuffer(void);
 void FreeLineInfos(void);
@@ -44,5 +44,6 @@ void LoadFile(void);
 void SaveFile(void);
 void ProcessKey(int key, bool ctrl, bool shift);
 void ProcessKeyDownMovement(int key, bool shift);
+void RenderTextBuffer(void);
 
 #endif

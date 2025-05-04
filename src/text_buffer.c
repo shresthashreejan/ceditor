@@ -27,7 +27,6 @@ Rectangle panelView = {0};
 int lastLineOnView = 0;
 int firstLineOnView = 0;
 const char *filePath = NULL;
-
 int nonPrintableKeys[] = {
     KEY_ENTER,
     KEY_BACKSPACE,
@@ -83,20 +82,28 @@ void InsertChar(TextBuffer *buffer, char ch) {
     buffer->text[buffer->length] = '\0';
 }
 
-void RemoveChar(TextBuffer *buffer) {
-    if(buffer->cursorPos.x > 0) {
+void RemoveChar(TextBuffer *buffer)
+{
+    if(buffer->cursorPos.x > 0)
+    {
         memmove(&buffer->text[(int)buffer->cursorPos.x - 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
         buffer->length--;
         buffer->cursorPos.x--;
         buffer->text[buffer->length] = '\0';
+        if(buffer->cursorPos.x == lineInfos[(int)buffer->cursorPos.y].lineStart)
+        {
+            buffer->cursorPos.y--;
+        }
     }
 }
 
-void KeyController(void) {
+bool KeyController(void) {
     int key = GetCharPressed();
+    bool isAnyKeyPressed = false;
     while(key > 0) {
         if(key >= 32 && key <= 126) {
             InsertChar(&textBuffer, (char)key);
+            isAnyKeyPressed = true;
         }
         key = GetCharPressed();
     }
@@ -109,6 +116,7 @@ void KeyController(void) {
         if(IsKeyPressed(nonPrintableKeys[i]))
         {
             ProcessKey(nonPrintableKeys[i], ctrl, shift);
+            isAnyKeyPressed = true;
         }
     }
 
@@ -117,7 +125,7 @@ void KeyController(void) {
     if(IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, shift);
     if(IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, shift);
     if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
-
+    return isAnyKeyPressed;
 }
 
 void ProcessKey(int key, bool ctrl, bool shift)
@@ -138,8 +146,6 @@ void ProcessKey(int key, bool ctrl, bool shift)
             else
             {
                 RemoveChar(&textBuffer);
-                // TODO: Proper cursor position y calculation
-                // CalculateCursorPosition(KEY_BACKSPACE);
             }
             break;
 
@@ -244,7 +250,6 @@ void ProcessKeyDownMovement(int key, bool shift)
     float frameTime = GetFrameTime();
     keyDownDelay += frameTime;
     lastCursorUpdateTime += frameTime;
- 
     if(keyDownDelay >= KEY_DOWN_DELAY)
     {
         if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL)
@@ -256,14 +261,11 @@ void ProcessKeyDownMovement(int key, bool shift)
 }
 
 int CalculateCursorPosX(int previousY) {
-    LineInfo *currentLine = &lineInfos[previousY];
-    LineInfo *newLine = &lineInfos[(int)textBuffer.cursorPos.y];
-    int offset = textBuffer.cursorPos.x - currentLine->lineStart;
-    int newXPos = newLine->lineStart + offset;
-    if(newXPos > newLine->lineEnd) {
-        newXPos = newLine->lineEnd;
-    }
-    return newXPos;
+    int offset = textBuffer.cursorPos.x - lineInfos[previousY].lineStart;
+    int newLineStart = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+    int newLineEnd = lineInfos[(int)textBuffer.cursorPos.y].lineEnd;
+    int newXPos = newLineStart + offset;
+    return (newXPos > newLineEnd) ? newLineEnd : newXPos;
 }
 
 void ProcessLines(void) {
@@ -296,11 +298,8 @@ void ProcessLines(void) {
     }
 }
 
-void TextBufferController(void) {
-    if(!textBuffer.text) return;
-
-    ProcessLines();
-
+void RenderTextBuffer(void)
+{
     float lineHeight = FONT_SIZE + TEXT_MARGIN;
     float totalWidth = maxLineWidth + (2 * TEXT_MARGIN);
     float totalHeight = (textBuffer.lineCount * lineHeight) + TEXT_MARGIN;
@@ -364,6 +363,11 @@ void TextBufferController(void) {
     }
 }
 
+void TextBufferController(void) {
+    if(!textBuffer.text) return;
+    ProcessLines();
+}
+
 // TODO: Fix this function
 void UpdateView(void) {
     int totalPossibleLines = GetScreenHeight() / (FONT_SIZE + TEXT_MARGIN); // Stores maximum number of lines visible based on screen height
@@ -385,6 +389,7 @@ void CalculateCursorPosition(int key) {
                 textBuffer.cursorPos.x--;
             }
             break;
+
         case KEY_RIGHT:
             if(textBuffer.cursorPos.x < textBuffer.length) {
                 if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
@@ -395,6 +400,7 @@ void CalculateCursorPosition(int key) {
                 }
             }
             break;
+
         case KEY_UP:
             if(textBuffer.cursorPos.y > 0) {
                 int previousY = textBuffer.cursorPos.y;
@@ -408,6 +414,7 @@ void CalculateCursorPosition(int key) {
                 textBuffer.cursorPos.x = cursorX;
             }
             break;
+
         case KEY_DOWN:
             if(textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
                 int previousY = textBuffer.cursorPos.y;
@@ -421,13 +428,7 @@ void CalculateCursorPosition(int key) {
                 textBuffer.cursorPos.x = cursorX;
             }
             break;
-        case KEY_BACKSPACE:
-            if(textBuffer.cursorPos.x > 0) {
-                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
-                    textBuffer.cursorPos.y--;
-                }
-            }
-            break;
+
         default:
             break;
     }
