@@ -12,5 +12,6 @@
 #define SIDEBAR_MARGIN 2
 #define CURSOR_UPDATE_INTERVAL 0.05f
 #define KEY_DOWN_DELAY 0.5f
+#define CURSOR_COLOR GRAY
 
 #endif

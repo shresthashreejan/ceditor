@@ -24,8 +24,6 @@ Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
 Rectangle totalView = {0};
 Rectangle panelView = {0};
-int lastLineOnView = 0;
-int firstLineOnView = 0;
 const char *filePath = NULL;
 int nonPrintableKeys[] = {
     KEY_ENTER,
@@ -47,6 +45,7 @@ void SetupTextBuffer(void) {
     InitializeLineInfos();
     lastBlinkTime = GetTime();
     font = GetFont();
+    UpdateSidebarWidth();
 }
 
 void InitializeTextBuffer(void) {
@@ -70,8 +69,10 @@ void InitializeLineInfos(void) {
     lineInfos = (LineInfo *)malloc(lineInfosCapacity * sizeof(LineInfo));
 }
 
-void InsertChar(TextBuffer *buffer, char ch) {
-    if(buffer->length + 1 >= buffer->capacity) {
+void InsertChar(TextBuffer *buffer, char ch)
+{
+    if(buffer->length + 1 >= buffer->capacity)
+    {
         buffer->capacity *= 2;
         buffer->text = (char *)realloc(buffer->text, buffer->capacity);
     }
@@ -90,7 +91,7 @@ void RemoveChar(TextBuffer *buffer)
         buffer->length--;
         buffer->cursorPos.x--;
         buffer->text[buffer->length] = '\0';
-        if(buffer->cursorPos.x == lineInfos[(int)buffer->cursorPos.y].lineStart)
+        if(buffer->cursorPos.x == lineInfos[(int)buffer->cursorPos.y - 1].lineEnd && buffer->cursorPos.y != 0)
         {
             buffer->cursorPos.y--;
         }
@@ -268,6 +269,14 @@ int CalculateCursorPosX(int previousY) {
     return (newXPos > newLineEnd) ? newLineEnd : newXPos;
 }
 
+void UpdateSidebarWidth(void)
+{
+    char lineNumberStr[16];
+    snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", textBuffer.lineCount);
+    Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
+    sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
+}
+
 void RenderTextBuffer(void)
 {
     float lineHeight = FONT_SIZE + TEXT_MARGIN;
@@ -276,29 +285,39 @@ void RenderTextBuffer(void)
 
     viewport = (Rectangle){sidebarWidth, 0, GetScreenWidth() - sidebarWidth, GetScreenHeight()};
     totalView = (Rectangle){0, 0, totalWidth, totalHeight};
+
+    int firstVisibleLine = (int)fmaxf(0, -scroll.y / lineHeight);
+    int lastVisibleLine = (int)fminf(textBuffer.lineCount, firstVisibleLine + (panelView.height / lineHeight) + 2);
+
     // UpdateView();
     GuiScrollPanel(viewport, NULL, totalView, &scroll, &panelView);
     DrawRectangle(0, 0, sidebarWidth, GetScreenHeight(), SIDEBAR_COLOR);
 
+    DrawSidebar(firstVisibleLine, lastVisibleLine, lineHeight, scroll.y);
+    DrawTextLines(firstVisibleLine, lastVisibleLine, lineHeight, scroll);
+    DrawCursor(lineHeight);
+}
+
+void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
+{
     BeginScissorMode(0, 0, sidebarWidth, GetScreenHeight());
-        for (int i = 0; i < textBuffer.lineCount; i++) {
+        for(int i = firstVisibleLine; i < lastVisibleLine; i++) {
             char lineNumberStr[16];
             snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", i + 1);
             Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
-            if(numberSize.x >= sidebarWidth) {
-                sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
-            }
             Vector2 linePos = {
                 sidebarWidth - numberSize.x - SIDEBAR_MARGIN,
-                (i * lineHeight) + scroll.y
+                (i * lineHeight) + scrollPosY
             };
             DrawTextEx(font, lineNumberStr, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
-            lastLineOnView = i + 1; // Stores current last line rendered on screen
         }
     EndScissorMode();
+}
 
+void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, Vector2 scroll)
+{
     BeginScissorMode(panelView.x, panelView.y, panelView.width, panelView.height);
-        for (int i = 0; i < textBuffer.lineCount; i++) {
+        for (int i = firstVisibleLine; i < lastVisibleLine; i++) {
             if (i >= lineInfosCapacity) break;
 
             char line[1024];
@@ -312,7 +331,10 @@ void RenderTextBuffer(void)
             DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
         }
     EndScissorMode();
+}
 
+void DrawCursor(float lineHeight)
+{
     if(textBuffer.cursorVisible) {
         int cursorLineStart = 0;
         for(int i = 0; i < textBuffer.cursorPos.x; i++) {
@@ -329,7 +351,7 @@ void RenderTextBuffer(void)
         Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
         int cursorX = sidebarWidth + TEXT_MARGIN + textSize.x + scroll.x;
         int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight) + scroll.y;
-        DrawLine(cursorX, cursorY, cursorX, cursorY + FONT_SIZE, BLACK);
+        DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, CURSOR_COLOR);
     }
 }
 
@@ -363,20 +385,13 @@ void TextBufferController(void) {
 
             lineStart = i + 1;
             textBuffer.lineCount++;
+            UpdateSidebarWidth();
         }
     }
 }
 
 // TODO: Fix this function
-void UpdateView(void) {
-    int totalPossibleLines = GetScreenHeight() / (FONT_SIZE + TEXT_MARGIN); // Stores maximum number of lines visible based on screen height
-    if(textBuffer.cursorPos.y + 1 > lastLineOnView) {
-        scroll.y -= FONT_SIZE + TEXT_MARGIN; // This does NOT work
-        firstLineOnView = lastLineOnView - (totalPossibleLines - 1); // Stores current first line rendered on screen
-    } else if(textBuffer.cursorPos.y < firstLineOnView) {
-        scroll.y += FONT_SIZE + TEXT_MARGIN; // This does NOT work
-    }
-}
+// void UpdateView(void){}
 
 void CalculateCursorPosition(int key) {
     switch(key) {

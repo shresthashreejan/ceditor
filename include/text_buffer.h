@@ -44,5 +44,9 @@ void SaveFile(void);
 void ProcessKey(int key, bool ctrl, bool shift);
 void ProcessKeyDownMovement(int key, bool shift);
 void RenderTextBuffer(void);
+void UpdateSidebarWidth(void);
+void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY);
+void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, Vector2 scroll);
+void DrawCursor(float lineHeight);
 
 #endif
