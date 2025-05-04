@@ -4,14 +4,16 @@
 #include "screen.h"
 #include "text_buffer.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     SetupConfiguration();
-    LoadResources();
-    if(argc > 0) {
+    if(argc > 0)
+    {
         filePath = argv[1];
         LoadFile();
     }
-    while(!WindowShouldClose()) {
+    while(!WindowShouldClose())
+    {
         BeginDrawing();
             ScreenController();
         EndDrawing();

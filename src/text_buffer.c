@@ -268,36 +268,6 @@ int CalculateCursorPosX(int previousY) {
     return (newXPos > newLineEnd) ? newLineEnd : newXPos;
 }
 
-void ProcessLines(void) {
-    int lineStart = 0;
-    maxLineWidth = 0;
-    textBuffer.lineCount = 0;
-    for(int i = 0; i <= textBuffer.length; i++) {
-        if(textBuffer.text[i] == '\n' || i == textBuffer.length) {
-            if(textBuffer.lineCount >= lineInfosCapacity) {
-                lineInfosCapacity *= 2;
-                lineInfos = (LineInfo *)realloc(lineInfos, lineInfosCapacity * sizeof(LineInfo));
-            }
-
-            lineInfos[textBuffer.lineCount] = (LineInfo){
-                .lineCount = textBuffer.lineCount,
-                .lineStart = lineStart,
-                .lineEnd = i,
-                .lineLength = i - lineStart
-            };
-
-            char line[1024];
-            strncpy(line, &textBuffer.text[lineStart], lineInfos[textBuffer.lineCount].lineLength);
-            line[lineInfos[textBuffer.lineCount].lineLength] = '\0';
-            Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
-            if(textSize.x > maxLineWidth) maxLineWidth = textSize.x;
-
-            lineStart = i + 1;
-            textBuffer.lineCount++;
-        }
-    }
-}
-
 void RenderTextBuffer(void)
 {
     float lineHeight = FONT_SIZE + TEXT_MARGIN;
@@ -365,7 +335,36 @@ void RenderTextBuffer(void)
 
 void TextBufferController(void) {
     if(!textBuffer.text) return;
-    ProcessLines();
+    int lineStart = 0;
+    maxLineWidth = 0;
+    textBuffer.lineCount = 0;
+    for(int i = 0; i <= textBuffer.length; i++)
+    {
+        if(textBuffer.text[i] == '\n' || i == textBuffer.length)
+        {
+            if(textBuffer.lineCount >= lineInfosCapacity)
+            {
+                lineInfosCapacity *= 2;
+                lineInfos = (LineInfo *)realloc(lineInfos, lineInfosCapacity * sizeof(LineInfo));
+            }
+
+            lineInfos[textBuffer.lineCount] = (LineInfo) {
+                .lineCount = textBuffer.lineCount,
+                .lineStart = lineStart,
+                .lineEnd = i,
+                .lineLength = i - lineStart
+            };
+
+            char line[1024];
+            strncpy(line, &textBuffer.text[lineStart], lineInfos[textBuffer.lineCount].lineLength);
+            line[lineInfos[textBuffer.lineCount].lineLength] = '\0';
+            Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
+            if(textSize.x > maxLineWidth) maxLineWidth = textSize.x;
+
+            lineStart = i + 1;
+            textBuffer.lineCount++;
+        }
+    }
 }
 
 // TODO: Fix this function
@@ -532,7 +531,7 @@ void LoadFile(void) {
     textBuffer.hasAllSelected = false;
     textBuffer.hasSelection = false;
 
-    ProcessLines();
+    TextBufferController();
 }
 
 void SaveFile(void) {

@@ -15,6 +15,7 @@ void SetupConfiguration(void) {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, CEDITOR);
     SetWindowMinSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     SetExitKey(KEY_NULL);
+    LoadResources();
 }
 
 void LoadResources(void) {
