@@ -28,6 +28,21 @@ int lastLineOnView = 0;
 int firstLineOnView = 0;
 const char *filePath = NULL;
 
+int nonPrintableKeys[] = {
+    KEY_ENTER,
+    KEY_BACKSPACE,
+    KEY_ESCAPE,
+    KEY_UP,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_C,
+    KEY_V,
+    KEY_A,
+    KEY_S
+};
+int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
+
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
     InitializeLineInfos();
@@ -85,18 +100,23 @@ void KeyController(void) {
         }
         key = GetCharPressed();
     }
+
     bool ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
     bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
 
-    ProcessKey(key, ctrl, shift);
+    for(int i = 0; i < nonPrintableKeysLength; i++)
+    {
+        if(IsKeyPressed(nonPrintableKeys[i]))
+        {
+            ProcessKey(nonPrintableKeys[i], ctrl, shift);
+        }
+    }
+
     if(IsKeyDown(KEY_UP)) ProcessKeyDownMovement(KEY_UP, shift);
     if(IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, shift);
     if(IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, shift);
     if(IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, shift);
-    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN))
-    {
-        keyDownDelay = 0.0f;
-    }
+    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
 
 }
 
@@ -221,14 +241,16 @@ void ProcessKey(int key, bool ctrl, bool shift)
 
 void ProcessKeyDownMovement(int key, bool shift)
 {
-    keyDownDelay += GetFrameTime();
+    float frameTime = GetFrameTime();
+    keyDownDelay += frameTime;
+    lastCursorUpdateTime += frameTime;
+ 
     if(keyDownDelay >= KEY_DOWN_DELAY)
     {
-        lastCursorUpdateTime += GetFrameTime();
         if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL)
         {
             if(shift) CalculateSelection(key); else CalculateCursorPosition(key);
-            lastCursorUpdateTime -= CURSOR_UPDATE_INTERVAL;
+            lastCursorUpdateTime = 0.0f;
         }
     }
 }
@@ -413,60 +435,63 @@ void CalculateCursorPosition(int key) {
 
 void CalculateSelection(int key)
 {
-    if(!textBuffer.hasSelectionStarted)
+    switch(key)
     {
-        switch(key)
-        {
-            case KEY_LEFT:
-                if(textBuffer.cursorPos.x > 0)
+        case KEY_LEFT:
+            if(textBuffer.cursorPos.x > 0)
+            {
+                if(!textBuffer.hasSelectionStarted)
                 {
-                    textBuffer.selectionEnd = textBuffer.cursorPos.x;
-                    if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart)
-                    {
-                        textBuffer.cursorPos.y--;
-                    }
-                    textBuffer.cursorPos.x--;
-                    textBuffer.selectionStart = textBuffer.cursorPos.x;
                     textBuffer.hasSelectionStarted = true;
-                    textBuffer.hasSelection = true;
-                    textBuffer.hasAllSelected = false;
-                }
-                break;
-
-            case KEY_RIGHT:
-                if(textBuffer.cursorPos.x < textBuffer.length)
-                {
-                    textBuffer.selectionStart = textBuffer.cursorPos.x;
-                    if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
-                    {
-                        textBuffer.cursorPos.y++;
-                        textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
-                    }
-                    else
-                    {
-                        textBuffer.cursorPos.x++;
-                    }
                     textBuffer.selectionEnd = textBuffer.cursorPos.x;
-                    textBuffer.hasSelectionStarted = true;
-                    textBuffer.hasSelection = true;
-                    textBuffer.hasAllSelected = false;
                 }
-                break;
-
-            case KEY_A:
-                if(textBuffer.cursorPos.x >= 0 && textBuffer.cursorPos.x <= textBuffer.length)
+                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart)
                 {
-                    textBuffer.selectionStart = 0;
-                    textBuffer.selectionEnd = textBuffer.length;
-                    textBuffer.hasSelectionStarted = false;
-                    textBuffer.hasSelection = true;
-                    textBuffer.hasAllSelected = true;
+                    textBuffer.cursorPos.y--;
                 }
-                break;
+                textBuffer.cursorPos.x--;
+                textBuffer.selectionStart = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+                textBuffer.hasAllSelected = false;
+            }
+            break;
 
-            default:
-                break;
-        }
+        case KEY_RIGHT:
+            if(textBuffer.cursorPos.x < textBuffer.length)
+            {
+                if(!textBuffer.hasSelectionStarted)
+                {
+                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.selectionStart = textBuffer.cursorPos.x;
+                }
+                if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                {
+                    textBuffer.cursorPos.y++;
+                    textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+                }
+                else
+                {
+                    textBuffer.cursorPos.x++;
+                }
+                textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+                textBuffer.hasAllSelected = false;
+            }
+            break;
+
+        case KEY_A:
+            if(textBuffer.cursorPos.x >= 0 && textBuffer.cursorPos.x <= textBuffer.length)
+            {
+                textBuffer.selectionStart = 0;
+                textBuffer.selectionEnd = textBuffer.length;
+                textBuffer.hasSelectionStarted = false;
+                textBuffer.hasSelection = true;
+                textBuffer.hasAllSelected = true;
+            }
+            break;
+
+        default:
+            break;
     }
 }
 
