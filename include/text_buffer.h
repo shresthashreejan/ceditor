@@ -22,17 +22,17 @@ typedef struct {
     int lineLength;
     int lineStart;
     int lineEnd;
-} LineInfo;
+} LineBuffer;
 
 void SetupTextBuffer(void);
 void InitializeTextBuffer(void);
-void InitializeLineInfos(void);
+void InitializeLineBuffer(void);
 void InsertChar(TextBuffer *buffer, char ch);
 void RemoveChar(TextBuffer *buffer);
 bool KeyController(void);
 void TextBufferController(void);
 void FreeTextBuffer(void);
-void FreeLineInfos(void);
+void FreeLineBuffer(void);
 void FreeBufferMemory(void);
 int CalculateCursorPosX(int previousY);
 void BlinkCursor(void);

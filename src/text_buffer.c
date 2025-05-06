@@ -12,9 +12,9 @@
 
 Font font;
 TextBuffer textBuffer;
-LineInfo *lineInfos = NULL;
+LineBuffer *lineBuffer = NULL;
 char *copiedText = NULL;
-int lineInfosCapacity = 0;
+int lineBufferCapacity = 0;
 int sidebarWidth = SIDEBAR_WIDTH;
 double lastBlinkTime;
 float lastCursorUpdateTime = 0.0f;
@@ -42,7 +42,7 @@ int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
-    InitializeLineInfos();
+    InitializeLineBuffer();
     lastBlinkTime = GetTime();
     font = GetFont();
     UpdateSidebarWidth();
@@ -64,9 +64,9 @@ void InitializeTextBuffer(void) {
     textBuffer.hasSelection = false;
 }
 
-void InitializeLineInfos(void) {
-    lineInfosCapacity = 16;
-    lineInfos = (LineInfo *)malloc(lineInfosCapacity * sizeof(LineInfo));
+void InitializeLineBuffer(void) {
+    lineBufferCapacity = 1024;
+    lineBuffer = (LineBuffer *)malloc(lineBufferCapacity * sizeof(LineBuffer));
 }
 
 void InsertChar(TextBuffer *buffer, char ch)
@@ -91,7 +91,7 @@ void RemoveChar(TextBuffer *buffer)
         buffer->length--;
         buffer->cursorPos.x--;
         buffer->text[buffer->length] = '\0';
-        if(buffer->cursorPos.x == lineInfos[(int)buffer->cursorPos.y - 1].lineEnd && buffer->cursorPos.y != 0)
+        if(buffer->cursorPos.x == lineBuffer[(int)buffer->cursorPos.y - 1].lineEnd && buffer->cursorPos.y != 0)
         {
             buffer->cursorPos.y--;
         }
@@ -165,7 +165,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
         case KEY_LEFT:
             if(ctrl)
             {
-                textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+                textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
             }
             else if(shift)
             {
@@ -180,7 +180,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
         case KEY_RIGHT:
             if(ctrl)
             {
-                textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineEnd;
+                textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
             }
             else if(shift)
             {
@@ -262,9 +262,9 @@ void ProcessKeyDownMovement(int key, bool shift)
 }
 
 int CalculateCursorPosX(int previousY) {
-    int offset = textBuffer.cursorPos.x - lineInfos[previousY].lineStart;
-    int newLineStart = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
-    int newLineEnd = lineInfos[(int)textBuffer.cursorPos.y].lineEnd;
+    int offset = textBuffer.cursorPos.x - lineBuffer[previousY].lineStart;
+    int newLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+    int newLineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
     int newXPos = newLineStart + offset;
     return (newXPos > newLineEnd) ? newLineEnd : newXPos;
 }
@@ -319,11 +319,11 @@ void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, 
 {
     BeginScissorMode(panelView.x, panelView.y, panelView.width, panelView.height);
         for (int i = firstVisibleLine; i < lastVisibleLine; i++) {
-            if (i >= lineInfosCapacity) break;
+            if (i >= lineBufferCapacity) break;
 
             char line[1024];
-            strncpy(line, &textBuffer.text[lineInfos[i].lineStart], lineInfos[i].lineLength);
-            line[lineInfos[i].lineLength] = '\0';
+            strncpy(line, &textBuffer.text[lineBuffer[i].lineStart], lineBuffer[i].lineLength);
+            line[lineBuffer[i].lineLength] = '\0';
 
             Vector2 linePos = {
                 sidebarWidth + TEXT_MARGIN + scroll.x,
@@ -366,13 +366,13 @@ void TextBufferController(void) {
     {
         if(textBuffer.text[i] == '\n' || i == textBuffer.length)
         {
-            if(textBuffer.lineCount >= lineInfosCapacity)
+            if(textBuffer.lineCount >= lineBufferCapacity)
             {
-                lineInfosCapacity *= 2;
-                lineInfos = (LineInfo *)realloc(lineInfos, lineInfosCapacity * sizeof(LineInfo));
+                lineBufferCapacity *= 2;
+                lineBuffer = (LineBuffer *)realloc(lineBuffer, lineBufferCapacity * sizeof(LineBuffer));
             }
 
-            lineInfos[textBuffer.lineCount] = (LineInfo) {
+            lineBuffer[textBuffer.lineCount] = (LineBuffer) {
                 .lineCount = textBuffer.lineCount,
                 .lineStart = lineStart,
                 .lineEnd = i,
@@ -380,8 +380,8 @@ void TextBufferController(void) {
             };
 
             char line[1024];
-            strncpy(line, &textBuffer.text[lineStart], lineInfos[textBuffer.lineCount].lineLength);
-            line[lineInfos[textBuffer.lineCount].lineLength] = '\0';
+            strncpy(line, &textBuffer.text[lineStart], lineBuffer[textBuffer.lineCount].lineLength);
+            line[lineBuffer[textBuffer.lineCount].lineLength] = '\0';
             Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
             if(textSize.x > maxLineWidth) maxLineWidth = textSize.x;
 
@@ -399,7 +399,7 @@ void CalculateCursorPosition(int key) {
     switch(key) {
         case KEY_LEFT:
             if(textBuffer.cursorPos.x > 0) {
-                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart) {
+                if(textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart) {
                     textBuffer.cursorPos.y--;
                 }
                 textBuffer.cursorPos.x--;
@@ -408,9 +408,9 @@ void CalculateCursorPosition(int key) {
 
         case KEY_RIGHT:
             if(textBuffer.cursorPos.x < textBuffer.length) {
-                if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
+                if((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
                     textBuffer.cursorPos.y++;
-                    textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
                 } else {
                     textBuffer.cursorPos.x++;
                 }
@@ -462,7 +462,7 @@ void CalculateSelection(int key)
                     textBuffer.hasSelectionStarted = true;
                     textBuffer.selectionEnd = textBuffer.cursorPos.x;
                 }
-                if(textBuffer.cursorPos.x == lineInfos[(int)textBuffer.cursorPos.y].lineStart)
+                if(textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
                 {
                     textBuffer.cursorPos.y--;
                 }
@@ -481,10 +481,10 @@ void CalculateSelection(int key)
                     textBuffer.hasSelectionStarted = true;
                     textBuffer.selectionStart = textBuffer.cursorPos.x;
                 }
-                if((textBuffer.cursorPos.x >= lineInfos[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                if((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
                 {
                     textBuffer.cursorPos.y++;
-                    textBuffer.cursorPos.x = lineInfos[(int)textBuffer.cursorPos.y].lineStart;
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
                 }
                 else
                 {
@@ -577,13 +577,13 @@ void FreeTextBuffer(void) {
     textBuffer.text = NULL;
 }
 
-void FreeLineInfos(void) {
-    free(lineInfos);
-    lineInfos = NULL;
-    lineInfosCapacity = 0;
+void FreeLineBuffer(void) {
+    free(lineBuffer);
+    lineBuffer = NULL;
+    lineBufferCapacity = 0;
 }
 
 void FreeBufferMemory(void) {
     FreeTextBuffer();
-    FreeLineInfos();
+    FreeLineBuffer();
 }
