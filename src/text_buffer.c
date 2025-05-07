@@ -154,7 +154,7 @@ bool KeyController(void)
 {
     int key = GetCharPressed();
     bool isAnyKeyPressed = false;
-    while(key > 0)
+    while (key > 0)
     {
         if (key >= 32 && key <= 126)
         {
@@ -187,7 +187,7 @@ bool KeyController(void)
 
 void ProcessKey(int key, bool ctrl, bool shift)
 {
-    switch(key)
+    switch (key)
     {
         case KEY_ENTER:
             InsertChar(&textBuffer, '\n');
@@ -440,7 +440,7 @@ void BlinkCursor(void)
 
 void CalculateCursorPosition(int key)
 {
-    switch(key)
+    switch (key)
     {
         case KEY_LEFT:
             if (textBuffer.cursorPos.x > 0)
@@ -521,7 +521,7 @@ int CalculateCursorPosX(int previousY)
 /* SELECTION */
 void CalculateSelection(int key)
 {
-    switch(key)
+    switch (key)
     {
         case KEY_LEFT:
             if (textBuffer.cursorPos.x > 0)
