@@ -7,12 +7,12 @@
 int main(int argc, char *argv[])
 {
     SetupConfiguration();
-    if(argc > 0)
+    if (argc > 0)
     {
         filePath = argv[1];
         LoadFile();
     }
-    while(!WindowShouldClose())
+    while (!WindowShouldClose())
     {
         BeginDrawing();
             ScreenController();

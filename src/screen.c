@@ -9,16 +9,16 @@ bool showFps = false;
 void ScreenController(void)
 {
     ClearBackground(RAYWHITE);
-    if(KeyController()) TextBufferController(); else UpdateCursorState();
+    if (KeyController()) TextBufferController(); else UpdateCursorState();
     RenderTextBuffer();
     RenderFrameRate();
 }
 
 void RenderFrameRate(void)
 {
-    if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_F))
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_F))
     {
         showFps = !showFps;
     }
-    if(showFps) DrawFPS(GetScreenWidth() - 100, GetScreenHeight() - FONT_SIZE);
+    if (showFps) DrawFPS(GetScreenWidth() - 100, GetScreenHeight() - FONT_SIZE);
 }

@@ -31,10 +31,10 @@ int nonPrintableKeys[] = {
     KEY_S
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
-float lastCursorUpdateTime = 0.0f;
+float keyDownElapsedTime = 0.0f;
 float keyDownDelay = 0.0f;
 float maxLineWidth = 0;
-float lastCursorActivityTime;
+float lastCursorUpdateTime;
 double lastBlinkTime;
 bool cursorIdle = true;
 Vector2 scroll = {0, 0};
@@ -78,7 +78,7 @@ void InitializeLineBuffer(void)
 /* TEXT BUFFER */
 void InsertChar(TextBuffer *buffer, char ch)
 {
-    if(buffer->length + 1 >= buffer->capacity)
+    if (buffer->length + 1 >= buffer->capacity)
     {
         buffer->capacity *= 2;
         buffer->text = (char *)realloc(buffer->text, buffer->capacity);
@@ -92,13 +92,13 @@ void InsertChar(TextBuffer *buffer, char ch)
 
 void RemoveChar(TextBuffer *buffer)
 {
-    if(buffer->cursorPos.x > 0)
+    if (buffer->cursorPos.x > 0)
     {
         memmove(&buffer->text[(int)buffer->cursorPos.x - 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
         buffer->length--;
         buffer->cursorPos.x--;
         buffer->text[buffer->length] = '\0';
-        if(buffer->cursorPos.x == lineBuffer[(int)buffer->cursorPos.y - 1].lineEnd && buffer->cursorPos.y != 0)
+        if (buffer->cursorPos.x == lineBuffer[(int)buffer->cursorPos.y - 1].lineEnd && buffer->cursorPos.y != 0)
         {
             buffer->cursorPos.y--;
         }
@@ -107,15 +107,15 @@ void RemoveChar(TextBuffer *buffer)
 
 void TextBufferController(void)
 {
-    if(!textBuffer.text) return;
+    if (!textBuffer.text) return;
     int lineStart = 0;
     maxLineWidth = 0;
     textBuffer.lineCount = 0;
-    for(int i = 0; i <= textBuffer.length; i++)
+    for (int i = 0; i <= textBuffer.length; i++)
     {
-        if(textBuffer.text[i] == '\n' || i == textBuffer.length)
+        if (textBuffer.text[i] == '\n' || i == textBuffer.length)
         {
-            if(textBuffer.lineCount >= lineBufferCapacity)
+            if (textBuffer.lineCount >= lineBufferCapacity)
             {
                 lineBufferCapacity *= 2;
                 lineBuffer = (LineBuffer *)realloc(lineBuffer, lineBufferCapacity * sizeof(LineBuffer));
@@ -132,7 +132,7 @@ void TextBufferController(void)
             strncpy(line, &textBuffer.text[lineStart], lineBuffer[textBuffer.lineCount].lineLength);
             line[lineBuffer[textBuffer.lineCount].lineLength] = '\0';
             Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
-            if(textSize.x > maxLineWidth) maxLineWidth = textSize.x;
+            if (textSize.x > maxLineWidth) maxLineWidth = textSize.x;
 
             lineStart = i + 1;
             textBuffer.lineCount++;
@@ -156,7 +156,7 @@ bool KeyController(void)
     bool isAnyKeyPressed = false;
     while(key > 0)
     {
-        if(key >= 32 && key <= 126)
+        if (key >= 32 && key <= 126)
         {
             InsertChar(&textBuffer, (char)key);
             isAnyKeyPressed = true;
@@ -167,9 +167,9 @@ bool KeyController(void)
     bool ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
     bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
 
-    for(int i = 0; i < nonPrintableKeysLength; i++)
+    for (int i = 0; i < nonPrintableKeysLength; i++)
     {
-        if(IsKeyPressed(nonPrintableKeys[i]))
+        if (IsKeyPressed(nonPrintableKeys[i]))
         {
             ProcessKey(nonPrintableKeys[i], ctrl, shift);
             RecordCursorActivity();
@@ -177,11 +177,11 @@ bool KeyController(void)
         }
     }
 
-    if(IsKeyDown(KEY_UP)) ProcessKeyDownMovement(KEY_UP, shift);
-    if(IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, shift);
-    if(IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, shift);
-    if(IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, shift);
-    if(IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
+    if (IsKeyDown(KEY_UP)) ProcessKeyDownMovement(KEY_UP, shift);
+    if (IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, shift);
+    if (IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, shift);
+    if (IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, shift);
+    if (IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
     return isAnyKeyPressed;
 }
 
@@ -195,7 +195,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_BACKSPACE:
-            if(textBuffer.hasSelection && textBuffer.hasAllSelected)
+            if (textBuffer.hasSelection && textBuffer.hasAllSelected)
             {
                 FreeTextBuffer();
                 InitializeTextBuffer();
@@ -207,7 +207,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_ESCAPE:
-            if(textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
+            if (textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
             break;
 
         case KEY_UP:
@@ -219,11 +219,11 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_LEFT:
-            if(ctrl)
+            if (ctrl)
             {
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
             }
-            else if(shift)
+            else if (shift)
             {
                 CalculateSelection(KEY_LEFT);
             }
@@ -234,11 +234,11 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_RIGHT:
-            if(ctrl)
+            if (ctrl)
             {
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
             }
-            else if(shift)
+            else if (shift)
             {
                 CalculateSelection(KEY_RIGHT);
             }
@@ -249,12 +249,12 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_C:
-            if(ctrl && textBuffer.hasSelection)
+            if (ctrl && textBuffer.hasSelection)
             {
                 int selectionLength = textBuffer.selectionEnd - textBuffer.selectionStart;
-                if(selectionLength > 0)
+                if (selectionLength > 0)
                 {
-                    if(copiedText != NULL) free(copiedText);
+                    if (copiedText != NULL) free(copiedText);
                     copiedText = (char *)malloc(selectionLength + 1);
                     strncpy(copiedText, &textBuffer.text[textBuffer.selectionStart], selectionLength);
                     copiedText[selectionLength] = '\0';
@@ -264,10 +264,10 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_V:
-            if(ctrl && copiedText != NULL)
+            if (ctrl && copiedText != NULL)
             {
                 int copiedLength = strlen(copiedText);
-                if(textBuffer.length + copiedLength >= textBuffer.capacity)
+                if (textBuffer.length + copiedLength >= textBuffer.capacity)
                 {
                     textBuffer.capacity = (textBuffer.length + copiedLength) * 2;
                     textBuffer.text = (char *)realloc(textBuffer.text, textBuffer.capacity);
@@ -279,9 +279,9 @@ void ProcessKey(int key, bool ctrl, bool shift)
                 textBuffer.length += copiedLength;
                 textBuffer.cursorPos.x += copiedLength;
                 textBuffer.text[textBuffer.length] = '\0';
-                for(int i = 0; i < copiedLength; i++)
+                for (int i = 0; i < copiedLength; i++)
                 {
-                    if(copiedText[i] == '\n')
+                    if (copiedText[i] == '\n')
                     {
                         textBuffer.cursorPos.y++;
                     }
@@ -290,11 +290,11 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_A:
-            if(ctrl) CalculateSelection(KEY_A);
+            if (ctrl) CalculateSelection(KEY_A);
             break;
 
         case KEY_S:
-            if(ctrl) SaveFile();
+            if (ctrl) SaveFile();
             break;
 
         default:
@@ -306,13 +306,13 @@ void ProcessKeyDownMovement(int key, bool shift)
 {
     float frameTime = GetFrameTime();
     keyDownDelay += frameTime;
-    lastCursorUpdateTime += frameTime;
-    if(keyDownDelay >= KEY_DOWN_DELAY)
+    keyDownElapsedTime += frameTime;
+    if (keyDownDelay >= KEY_DOWN_DELAY)
     {
-        if(lastCursorUpdateTime >= CURSOR_UPDATE_INTERVAL)
+        if (keyDownElapsedTime >= KEY_DOWN_INTERVAL)
         {
-            if(shift) CalculateSelection(key); else CalculateCursorPosition(key);
-            lastCursorUpdateTime = 0.0f;
+            if (shift) CalculateSelection(key); else CalculateCursorPosition(key);
+            keyDownElapsedTime = 0.0f;
         }
         RecordCursorActivity();
     }
@@ -343,8 +343,8 @@ void RenderTextBuffer(void)
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
 {
     BeginScissorMode(0, 0, sidebarWidth, GetScreenHeight());
-        if(lastVisibleLine == 0) lastVisibleLine += 1;
-        for(int i = firstVisibleLine; i < lastVisibleLine; i++)
+        if (lastVisibleLine == 0) lastVisibleLine += 1;
+        for (int i = firstVisibleLine; i < lastVisibleLine; i++)
         {
             char lineNumberStr[16];
             snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", i + 1);
@@ -380,12 +380,12 @@ void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, 
 
 void DrawCursor(float lineHeight)
 {
-    if(textBuffer.cursorVisible)
+    if (textBuffer.cursorVisible)
     {
         int cursorLineStart = 0;
-        for(int i = 0; i < textBuffer.cursorPos.x; i++)
+        for (int i = 0; i < textBuffer.cursorPos.x; i++)
         {
-            if(textBuffer.text[i] == '\n')
+            if (textBuffer.text[i] == '\n')
             {
                 cursorLineStart = i + 1;
             }
@@ -407,26 +407,26 @@ void DrawCursor(float lineHeight)
 /* CURSOR */
 void RecordCursorActivity(void)
 {
-    lastCursorActivityTime = GetTime();
+    lastCursorUpdateTime = GetTime();
     cursorIdle = false;
 }
 
 void UpdateCursorState(void)
 {
     double now = GetTime();
-    if(!cursorIdle && now - lastCursorActivityTime >= CURSOR_IDLE_INTERVAL)
+    if (!cursorIdle && now - lastCursorUpdateTime >= CURSOR_IDLE_INTERVAL)
     {
         cursorIdle = true;
-        lastCursorActivityTime = now;
+        lastCursorUpdateTime = now;
     }
 }
 
 void BlinkCursor(void)
 {
-    if(cursorIdle)
+    if (cursorIdle)
     {
         double currentTime = GetTime();
-        if(currentTime - lastBlinkTime >= BLINK_INTERVAL)
+        if (currentTime - lastBlinkTime >= BLINK_INTERVAL)
         {
             textBuffer.cursorVisible = !textBuffer.cursorVisible;
             lastBlinkTime = currentTime;
@@ -443,9 +443,9 @@ void CalculateCursorPosition(int key)
     switch(key)
     {
         case KEY_LEFT:
-            if(textBuffer.cursorPos.x > 0)
+            if (textBuffer.cursorPos.x > 0)
             {
-                if(textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
+                if (textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
                 {
                     textBuffer.cursorPos.y--;
                 }
@@ -454,9 +454,9 @@ void CalculateCursorPosition(int key)
             break;
 
         case KEY_RIGHT:
-            if(textBuffer.cursorPos.x < textBuffer.length)
+            if (textBuffer.cursorPos.x < textBuffer.length)
             {
-                if((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                if ((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
                 {
                     textBuffer.cursorPos.y++;
                     textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
@@ -469,10 +469,10 @@ void CalculateCursorPosition(int key)
             break;
 
         case KEY_UP:
-            if(textBuffer.cursorPos.y > 0)
+            if (textBuffer.cursorPos.y > 0)
             {
                 int previousY = textBuffer.cursorPos.y;
-                if(textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount)
+                if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount)
                 {
                     textBuffer.cursorPos.y = previousY;
                     return;
@@ -487,10 +487,10 @@ void CalculateCursorPosition(int key)
             break;
 
         case KEY_DOWN:
-            if(textBuffer.cursorPos.y < textBuffer.lineCount - 1)
+            if (textBuffer.cursorPos.y < textBuffer.lineCount - 1)
             {
                 int previousY = textBuffer.cursorPos.y;
-                if(textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount)
+                if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount)
                 {
                     textBuffer.cursorPos.y = previousY;
                     return;
@@ -524,14 +524,14 @@ void CalculateSelection(int key)
     switch(key)
     {
         case KEY_LEFT:
-            if(textBuffer.cursorPos.x > 0)
+            if (textBuffer.cursorPos.x > 0)
             {
-                if(!textBuffer.hasSelectionStarted)
+                if (!textBuffer.hasSelectionStarted)
                 {
                     textBuffer.hasSelectionStarted = true;
                     textBuffer.selectionEnd = textBuffer.cursorPos.x;
                 }
-                if(textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
+                if (textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
                 {
                     textBuffer.cursorPos.y--;
                 }
@@ -543,14 +543,14 @@ void CalculateSelection(int key)
             break;
 
         case KEY_RIGHT:
-            if(textBuffer.cursorPos.x < textBuffer.length)
+            if (textBuffer.cursorPos.x < textBuffer.length)
             {
-                if(!textBuffer.hasSelectionStarted)
+                if (!textBuffer.hasSelectionStarted)
                 {
                     textBuffer.hasSelectionStarted = true;
                     textBuffer.selectionStart = textBuffer.cursorPos.x;
                 }
-                if((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                if ((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
                 {
                     textBuffer.cursorPos.y++;
                     textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
@@ -566,7 +566,7 @@ void CalculateSelection(int key)
             break;
 
         case KEY_A:
-            if(textBuffer.cursorPos.x >= 0 && textBuffer.cursorPos.x <= textBuffer.length)
+            if (textBuffer.cursorPos.x >= 0 && textBuffer.cursorPos.x <= textBuffer.length)
             {
                 textBuffer.selectionStart = 0;
                 textBuffer.selectionEnd = textBuffer.length;
@@ -585,7 +585,7 @@ void CalculateSelection(int key)
 void LoadFile(void)
 {
     FILE *file = fopen(filePath, "r");
-    if(file == NULL)
+    if (file == NULL)
     {
         printf("Error: Unable to open file %s\n", filePath);
         return;
@@ -596,7 +596,7 @@ void LoadFile(void)
     fseek(file, 0, SEEK_SET);
 
     char *fileContent = (char *)malloc(fileSize + 1);
-    if(fileContent == NULL)
+    if (fileContent == NULL)
     {
         printf("Error: Memory allocation failed for file content\n");
         fclose(file);
@@ -627,7 +627,7 @@ void LoadFile(void)
 void SaveFile(void)
 {
     FILE *file = fopen(filePath, "w");
-    if(file == NULL)
+    if (file == NULL)
     {
         printf("Error: Unable to open file %s for saving\n", filePath);
         return;
