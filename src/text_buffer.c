@@ -13,18 +13,10 @@
 Font font;
 TextBuffer textBuffer;
 LineBuffer *lineBuffer = NULL;
+const char *filePath = NULL;
 char *copiedText = NULL;
 int lineBufferCapacity = 0;
 int sidebarWidth = SIDEBAR_WIDTH;
-double lastBlinkTime;
-float lastCursorUpdateTime = 0.0f;
-float keyDownDelay = 0.0f;
-float maxLineWidth = 0;
-Vector2 scroll = {0, 0};
-Rectangle viewport = {0};
-Rectangle totalView = {0};
-Rectangle panelView = {0};
-const char *filePath = NULL;
 int nonPrintableKeys[] = {
     KEY_ENTER,
     KEY_BACKSPACE,
@@ -39,10 +31,20 @@ int nonPrintableKeys[] = {
     KEY_S
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
-bool cursorIdle = true;
+float lastCursorUpdateTime = 0.0f;
+float keyDownDelay = 0.0f;
+float maxLineWidth = 0;
 float lastCursorActivityTime;
+double lastBlinkTime;
+bool cursorIdle = true;
+Vector2 scroll = {0, 0};
+Rectangle viewport = {0};
+Rectangle totalView = {0};
+Rectangle panelView = {0};
 
-void SetupTextBuffer(void) {
+/* SETUP */
+void SetupTextBuffer(void)
+{
     InitializeTextBuffer();
     InitializeLineBuffer();
     lastBlinkTime = GetTime();
@@ -50,7 +52,8 @@ void SetupTextBuffer(void) {
     UpdateSidebarWidth();
 }
 
-void InitializeTextBuffer(void) {
+void InitializeTextBuffer(void)
+{
     textBuffer.text = (char *)malloc(1024);
     textBuffer.length = 0;
     textBuffer.capacity = 1024;
@@ -66,11 +69,13 @@ void InitializeTextBuffer(void) {
     textBuffer.hasSelection = false;
 }
 
-void InitializeLineBuffer(void) {
+void InitializeLineBuffer(void)
+{
     lineBufferCapacity = 1024;
     lineBuffer = (LineBuffer *)malloc(lineBufferCapacity * sizeof(LineBuffer));
 }
 
+/* TEXT BUFFER */
 void InsertChar(TextBuffer *buffer, char ch)
 {
     if(buffer->length + 1 >= buffer->capacity)
@@ -100,11 +105,59 @@ void RemoveChar(TextBuffer *buffer)
     }
 }
 
-bool KeyController(void) {
+void TextBufferController(void)
+{
+    if(!textBuffer.text) return;
+    int lineStart = 0;
+    maxLineWidth = 0;
+    textBuffer.lineCount = 0;
+    for(int i = 0; i <= textBuffer.length; i++)
+    {
+        if(textBuffer.text[i] == '\n' || i == textBuffer.length)
+        {
+            if(textBuffer.lineCount >= lineBufferCapacity)
+            {
+                lineBufferCapacity *= 2;
+                lineBuffer = (LineBuffer *)realloc(lineBuffer, lineBufferCapacity * sizeof(LineBuffer));
+            }
+
+            lineBuffer[textBuffer.lineCount] = (LineBuffer) {
+                .lineCount = textBuffer.lineCount,
+                .lineStart = lineStart,
+                .lineEnd = i,
+                .lineLength = i - lineStart
+            };
+
+            char line[1024];
+            strncpy(line, &textBuffer.text[lineStart], lineBuffer[textBuffer.lineCount].lineLength);
+            line[lineBuffer[textBuffer.lineCount].lineLength] = '\0';
+            Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
+            if(textSize.x > maxLineWidth) maxLineWidth = textSize.x;
+
+            lineStart = i + 1;
+            textBuffer.lineCount++;
+            UpdateSidebarWidth();
+        }
+    }
+}
+
+void UpdateSidebarWidth(void)
+{
+    char lineNumberStr[16];
+    snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", textBuffer.lineCount);
+    Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
+    sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
+}
+
+/* KEY CONTROLLER */
+bool KeyController(void)
+{
     int key = GetCharPressed();
     bool isAnyKeyPressed = false;
-    while(key > 0) {
-        if(key >= 32 && key <= 126) {
+    while(key > 0)
+    {
+        if(key >= 32 && key <= 126)
+        {
             InsertChar(&textBuffer, (char)key);
             isAnyKeyPressed = true;
         }
@@ -265,22 +318,7 @@ void ProcessKeyDownMovement(int key, bool shift)
     }
 }
 
-int CalculateCursorPosX(int previousY) {
-    int offset = textBuffer.cursorPos.x - lineBuffer[previousY].lineStart;
-    int newLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
-    int newLineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
-    int newXPos = newLineStart + offset;
-    return (newXPos > newLineEnd) ? newLineEnd : newXPos;
-}
-
-void UpdateSidebarWidth(void)
-{
-    char lineNumberStr[16];
-    snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", textBuffer.lineCount);
-    Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
-    sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
-}
-
+/* RENDERING */
 void RenderTextBuffer(void)
 {
     float lineHeight = FONT_SIZE + TEXT_MARGIN;
@@ -306,7 +344,8 @@ void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, fl
 {
     BeginScissorMode(0, 0, sidebarWidth, GetScreenHeight());
         if(lastVisibleLine == 0) lastVisibleLine += 1;
-        for(int i = firstVisibleLine; i < lastVisibleLine; i++) {
+        for(int i = firstVisibleLine; i < lastVisibleLine; i++)
+        {
             char lineNumberStr[16];
             snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", i + 1);
             Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
@@ -322,7 +361,8 @@ void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, fl
 void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, Vector2 scroll)
 {
     BeginScissorMode(panelView.x, panelView.y, panelView.width, panelView.height);
-        for (int i = firstVisibleLine; i < lastVisibleLine; i++) {
+        for (int i = firstVisibleLine; i < lastVisibleLine; i++)
+        {
             if (i >= lineBufferCapacity) break;
 
             char line[1024];
@@ -340,10 +380,13 @@ void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, 
 
 void DrawCursor(float lineHeight)
 {
-    if(textBuffer.cursorVisible) {
+    if(textBuffer.cursorVisible)
+    {
         int cursorLineStart = 0;
-        for(int i = 0; i < textBuffer.cursorPos.x; i++) {
-            if(textBuffer.text[i] == '\n') {
+        for(int i = 0; i < textBuffer.cursorPos.x; i++)
+        {
+            if(textBuffer.text[i] == '\n')
+            {
                 cursorLineStart = i + 1;
             }
         }
@@ -361,49 +404,49 @@ void DrawCursor(float lineHeight)
     BlinkCursor();
 }
 
-void TextBufferController(void) {
-    if(!textBuffer.text) return;
-    int lineStart = 0;
-    maxLineWidth = 0;
-    textBuffer.lineCount = 0;
-    for(int i = 0; i <= textBuffer.length; i++)
+/* CURSOR */
+void RecordCursorActivity(void)
+{
+    lastCursorActivityTime = GetTime();
+    cursorIdle = false;
+}
+
+void UpdateCursorState(void)
+{
+    double now = GetTime();
+    if(!cursorIdle && now - lastCursorActivityTime >= CURSOR_IDLE_INTERVAL)
     {
-        if(textBuffer.text[i] == '\n' || i == textBuffer.length)
-        {
-            if(textBuffer.lineCount >= lineBufferCapacity)
-            {
-                lineBufferCapacity *= 2;
-                lineBuffer = (LineBuffer *)realloc(lineBuffer, lineBufferCapacity * sizeof(LineBuffer));
-            }
-
-            lineBuffer[textBuffer.lineCount] = (LineBuffer) {
-                .lineCount = textBuffer.lineCount,
-                .lineStart = lineStart,
-                .lineEnd = i,
-                .lineLength = i - lineStart
-            };
-
-            char line[1024];
-            strncpy(line, &textBuffer.text[lineStart], lineBuffer[textBuffer.lineCount].lineLength);
-            line[lineBuffer[textBuffer.lineCount].lineLength] = '\0';
-            Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
-            if(textSize.x > maxLineWidth) maxLineWidth = textSize.x;
-
-            lineStart = i + 1;
-            textBuffer.lineCount++;
-            UpdateSidebarWidth();
-        }
+        cursorIdle = true;
+        lastCursorActivityTime = now;
     }
 }
 
-// TODO: Fix this function
-// void UpdateView(void){}
+void BlinkCursor(void)
+{
+    if(cursorIdle)
+    {
+        double currentTime = GetTime();
+        if(currentTime - lastBlinkTime >= BLINK_INTERVAL)
+        {
+            textBuffer.cursorVisible = !textBuffer.cursorVisible;
+            lastBlinkTime = currentTime;
+        }
+    }
+    else
+    {
+        textBuffer.cursorVisible = true;
+    }
+}
 
-void CalculateCursorPosition(int key) {
-    switch(key) {
+void CalculateCursorPosition(int key)
+{
+    switch(key)
+    {
         case KEY_LEFT:
-            if(textBuffer.cursorPos.x > 0) {
-                if(textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart) {
+            if(textBuffer.cursorPos.x > 0)
+            {
+                if(textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
+                {
                     textBuffer.cursorPos.y--;
                 }
                 textBuffer.cursorPos.x--;
@@ -411,23 +454,31 @@ void CalculateCursorPosition(int key) {
             break;
 
         case KEY_RIGHT:
-            if(textBuffer.cursorPos.x < textBuffer.length) {
-                if((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount) {
+            if(textBuffer.cursorPos.x < textBuffer.length)
+            {
+                if((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                {
                     textBuffer.cursorPos.y++;
                     textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
-                } else {
+                }
+                else
+                {
                     textBuffer.cursorPos.x++;
                 }
             }
             break;
 
         case KEY_UP:
-            if(textBuffer.cursorPos.y > 0) {
+            if(textBuffer.cursorPos.y > 0)
+            {
                 int previousY = textBuffer.cursorPos.y;
-                if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
+                if(textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount)
+                {
                     textBuffer.cursorPos.y = previousY;
                     return;
-                } else {
+                }
+                else
+                {
                     textBuffer.cursorPos.y--;
                 }
                 int cursorX = CalculateCursorPosX(previousY);
@@ -436,12 +487,16 @@ void CalculateCursorPosition(int key) {
             break;
 
         case KEY_DOWN:
-            if(textBuffer.cursorPos.y < textBuffer.lineCount - 1) {
+            if(textBuffer.cursorPos.y < textBuffer.lineCount - 1)
+            {
                 int previousY = textBuffer.cursorPos.y;
-                if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) {
+                if(textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount)
+                {
                     textBuffer.cursorPos.y = previousY;
                     return;
-                } else {
+                }
+                else
+                {
                     textBuffer.cursorPos.y++;
                 }
                 int cursorX = CalculateCursorPosX(previousY);
@@ -454,6 +509,16 @@ void CalculateCursorPosition(int key) {
     }
 }
 
+int CalculateCursorPosX(int previousY)
+{
+    int offset = textBuffer.cursorPos.x - lineBuffer[previousY].lineStart;
+    int newLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+    int newLineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+    int newXPos = newLineStart + offset;
+    return (newXPos > newLineEnd) ? newLineEnd : newXPos;
+}
+
+/* SELECTION */
 void CalculateSelection(int key)
 {
     switch(key)
@@ -516,9 +581,12 @@ void CalculateSelection(int key)
     }
 }
 
-void LoadFile(void) {
+/* FILE HANDLING */
+void LoadFile(void)
+{
     FILE *file = fopen(filePath, "r");
-    if(file == NULL) {
+    if(file == NULL)
+    {
         printf("Error: Unable to open file %s\n", filePath);
         return;
     }
@@ -528,7 +596,8 @@ void LoadFile(void) {
     fseek(file, 0, SEEK_SET);
 
     char *fileContent = (char *)malloc(fileSize + 1);
-    if(fileContent == NULL) {
+    if(fileContent == NULL)
+    {
         printf("Error: Memory allocation failed for file content\n");
         fclose(file);
         return;
@@ -555,9 +624,11 @@ void LoadFile(void) {
     TextBufferController();
 }
 
-void SaveFile(void) {
+void SaveFile(void)
+{
     FILE *file = fopen(filePath, "w");
-    if(file == NULL) {
+    if(file == NULL)
+    {
         printf("Error: Unable to open file %s for saving\n", filePath);
         return;
     }
@@ -567,50 +638,22 @@ void SaveFile(void) {
     printf("File saved to %s\n", filePath);
 }
 
-void RecordCursorActivity(void)
+/* MEMORY DEALLOCATION */
+void FreeTextBuffer(void)
 {
-    lastCursorActivityTime = GetTime();
-    cursorIdle = false;
-}
-
-void UpdateCursorState(void)
-{
-    double now = GetTime();
-    if(!cursorIdle && now - lastCursorActivityTime >= CURSOR_IDLE_INTERVAL)
-    {
-        cursorIdle = true;
-        lastCursorActivityTime = now;
-    }
-}
-
-// TODO: Needs proper implementation
-void BlinkCursor(void) {
-    if(cursorIdle)
-    {
-        double currentTime = GetTime();
-        if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
-            textBuffer.cursorVisible = !textBuffer.cursorVisible;
-            lastBlinkTime = currentTime;
-        }
-    }
-    else
-    {
-        textBuffer.cursorVisible = true;
-    }
-}
-
-void FreeTextBuffer(void) {
     free(textBuffer.text);
     textBuffer.text = NULL;
 }
 
-void FreeLineBuffer(void) {
+void FreeLineBuffer(void)
+{
     free(lineBuffer);
     lineBuffer = NULL;
     lineBufferCapacity = 0;
 }
 
-void FreeBufferMemory(void) {
+void FreeBufferMemory(void)
+{
     FreeTextBuffer();
     FreeLineBuffer();
 }

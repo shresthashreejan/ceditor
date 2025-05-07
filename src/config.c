@@ -9,7 +9,8 @@
 
 Font customFont;
 
-void SetupConfiguration(void) {
+void SetupConfiguration(void)
+{
     SetTargetFPS(0);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, CEDITOR);
@@ -18,20 +19,24 @@ void SetupConfiguration(void) {
     LoadResources();
 }
 
-void LoadResources(void) {
+void LoadResources(void)
+{
     LoadCustomFont();
     SetupTextBuffer();
 }
 
-void UnloadResources(void) {
+void UnloadResources(void)
+{
     UnloadFont(customFont);
     FreeBufferMemory();
 }
 
-Font GetFont(void) {
+Font GetFont(void)
+{
     return customFont;
 }
 
-void LoadCustomFont(void) {
+void LoadCustomFont(void)
+{
     customFont = LoadFontEx("./assets/fonts/JuliaMono-Medium.ttf", FONT_SIZE * 2, NULL, 0);
 }

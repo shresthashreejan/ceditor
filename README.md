@@ -9,9 +9,9 @@ A very buggy text editor missing basic features (for now), written in C and Rayl
 - Text selection
 - Copy and paste functions
 - File read/write
+- Proper cursor blinking
 
 ### Planned features
-- Proper cursor blinking
 - Undo support
 - Better text navigation
 - Save with custom file path

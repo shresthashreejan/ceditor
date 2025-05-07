@@ -29,12 +29,10 @@ void InitializeTextBuffer(void);
 void InitializeLineBuffer(void);
 void InsertChar(TextBuffer *buffer, char ch);
 void RemoveChar(TextBuffer *buffer);
-bool KeyController(void);
 void TextBufferController(void);
 void FreeTextBuffer(void);
 void FreeLineBuffer(void);
 void FreeBufferMemory(void);
-int CalculateCursorPosX(int previousY);
 void BlinkCursor(void);
 void CalculateCursorPosition(int key);
 void CalculateSelection(int key);
@@ -50,5 +48,7 @@ void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, 
 void DrawCursor(float lineHeight);
 void RecordCursorActivity(void);
 void UpdateCursorState(void);
+int CalculateCursorPosX(int previousY);
+bool KeyController(void);
 
 #endif

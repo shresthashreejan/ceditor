@@ -14,7 +14,8 @@ void ScreenController(void)
     RenderFrameRate();
 }
 
-void RenderFrameRate(void) {
+void RenderFrameRate(void)
+{
     if((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_F))
     {
         showFps = !showFps;

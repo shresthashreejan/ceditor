@@ -4,7 +4,7 @@
 void SetupConfiguration(void);
 void LoadResources(void);
 void UnloadResources(void);
-Font GetFont(void);
 void LoadCustomFont(void);
+Font GetFont(void);
 
 #endif
