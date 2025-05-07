@@ -13,5 +13,6 @@
 #define CURSOR_UPDATE_INTERVAL 0.05f
 #define KEY_DOWN_DELAY 0.5f
 #define CURSOR_COLOR GRAY
+#define CURSOR_IDLE_INTERVAL 1.0f
 
 #endif

@@ -9,7 +9,7 @@ bool showFps = false;
 void ScreenController(void)
 {
     ClearBackground(RAYWHITE);
-    if(KeyController()) TextBufferController();
+    if(KeyController()) TextBufferController(); else UpdateCursorState();
     RenderTextBuffer();
     RenderFrameRate();
 }

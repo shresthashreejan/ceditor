@@ -39,6 +39,8 @@ int nonPrintableKeys[] = {
     KEY_S
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
+bool cursorIdle = true;
+float lastCursorActivityTime;
 
 void SetupTextBuffer(void) {
     InitializeTextBuffer();
@@ -117,6 +119,7 @@ bool KeyController(void) {
         if(IsKeyPressed(nonPrintableKeys[i]))
         {
             ProcessKey(nonPrintableKeys[i], ctrl, shift);
+            RecordCursorActivity();
             isAnyKeyPressed = true;
         }
     }
@@ -258,6 +261,7 @@ void ProcessKeyDownMovement(int key, bool shift)
             if(shift) CalculateSelection(key); else CalculateCursorPosition(key);
             lastCursorUpdateTime = 0.0f;
         }
+        RecordCursorActivity();
     }
 }
 
@@ -563,12 +567,35 @@ void SaveFile(void) {
     printf("File saved to %s\n", filePath);
 }
 
+void RecordCursorActivity(void)
+{
+    lastCursorActivityTime = GetTime();
+    cursorIdle = false;
+}
+
+void UpdateCursorState(void)
+{
+    double now = GetTime();
+    if(!cursorIdle && now - lastCursorActivityTime >= CURSOR_IDLE_INTERVAL)
+    {
+        cursorIdle = true;
+        lastCursorActivityTime = now;
+    }
+}
+
 // TODO: Needs proper implementation
 void BlinkCursor(void) {
-    double currentTime = GetTime();
-    if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
-        textBuffer.cursorVisible = !textBuffer.cursorVisible;
-        lastBlinkTime = currentTime;
+    if(cursorIdle)
+    {
+        double currentTime = GetTime();
+        if(currentTime - lastBlinkTime >= BLINK_INTERVAL) {
+            textBuffer.cursorVisible = !textBuffer.cursorVisible;
+            lastBlinkTime = currentTime;
+        }
+    }
+    else
+    {
+        textBuffer.cursorVisible = true;
     }
 }
 

@@ -48,5 +48,7 @@ void UpdateSidebarWidth(void);
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY);
 void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, Vector2 scroll);
 void DrawCursor(float lineHeight);
+void RecordCursorActivity(void);
+void UpdateCursorState(void);
 
 #endif
