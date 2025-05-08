@@ -5,6 +5,7 @@
 #include "raylib.h"
 #include "raygui.h"
 #include "raymath.h"
+#include "rlgl.h"
 
 #include "text_buffer.h"
 #include "constants.h"
@@ -397,9 +398,12 @@ void DrawCursor(float lineHeight)
         currentLine[charsInLine] = '\0';
 
         Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
-        int cursorX = sidebarWidth + TEXT_MARGIN + textSize.x + scroll.x;
+        int cursorX = sidebarWidth + (2 * TEXT_MARGIN) + textSize.x + scroll.x;
         int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight) + scroll.y;
-        DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, CURSOR_COLOR);
+        BeginBlendMode(BLEND_CUSTOM);
+            rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
+            DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, RAYWHITE);
+        EndBlendMode();
     }
     BlinkCursor();
 }
