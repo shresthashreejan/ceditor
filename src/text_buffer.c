@@ -339,6 +339,7 @@ void RenderTextBuffer(void)
     DrawSidebar(firstVisibleLine, lastVisibleLine, lineHeight, scroll.y);
     DrawTextLines(firstVisibleLine, lastVisibleLine, lineHeight, scroll);
     DrawCursor(lineHeight);
+    if (textBuffer.hasSelection) DrawSelectionIndicator();
 }
 
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
@@ -582,6 +583,18 @@ void CalculateSelection(int key)
 
         default:
             break;
+    }
+}
+
+void DrawSelectionIndicator(void)
+{
+    printf("START: %d, END: %d\n", textBuffer.selectionStart, textBuffer.selectionEnd);
+    for (int i = textBuffer.selectionStart; i <= textBuffer.selectionEnd; i++)
+    {
+        BeginBlendMode(BLEND_CUSTOM);
+            rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
+            DrawRectangle(sidebarWidth + i + (2 * TEXT_MARGIN), 0, FONT_SIZE / 2, FONT_SIZE, BLUE);
+        EndBlendMode();
     }
 }
 

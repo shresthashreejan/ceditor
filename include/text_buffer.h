@@ -48,6 +48,7 @@ void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, 
 void DrawCursor(float lineHeight);
 void RecordCursorActivity(void);
 void UpdateCursorState(void);
+void DrawSelectionIndicator(void);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
 
