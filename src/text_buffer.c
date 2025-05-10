@@ -384,23 +384,15 @@ void DrawCursor(float lineHeight)
 {
     if (textBuffer.cursorVisible)
     {
-        int cursorLineStart = 0;
-        for (int i = 0; i < textBuffer.cursorPos.x; i++)
-        {
-            if (textBuffer.text[i] == '\n')
-            {
-                cursorLineStart = i + 1;
-            }
-        }
-
+        int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
         int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
         char currentLine[1024];
         strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
         currentLine[charsInLine] = '\0';
 
         Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
-        int cursorX = sidebarWidth + (2 * TEXT_MARGIN) + textSize.x + scroll.x;
-        int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight) + scroll.y;
+        int cursorX = sidebarWidth + (2 * TEXT_MARGIN) + textSize.x;
+        int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight);
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
             DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, RAYWHITE);
@@ -588,12 +580,23 @@ void CalculateSelection(int key)
 
 void DrawSelectionIndicator(void)
 {
-    printf("START: %d, END: %d\n", textBuffer.selectionStart, textBuffer.selectionEnd);
+    float lineHeight = FONT_SIZE + TEXT_MARGIN;
+
     for (int i = textBuffer.selectionStart; i <= textBuffer.selectionEnd; i++)
     {
+        int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+        int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
+        char currentLine[1024];
+        strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
+        currentLine[charsInLine] = '\0';
+
+        Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
+        int cursorX = sidebarWidth + (2 * TEXT_MARGIN) + textSize.x;
+        int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight);
+
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-            DrawRectangle(sidebarWidth + i + (2 * TEXT_MARGIN), 0, FONT_SIZE / 2, FONT_SIZE, BLUE);
+            DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, BLUE);
         EndBlendMode();
     }
 }
