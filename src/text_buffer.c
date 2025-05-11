@@ -211,7 +211,6 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_ESCAPE:
-            if (textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
             ClearSelectionIndicator();
             break;
 
