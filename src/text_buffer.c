@@ -68,6 +68,7 @@ void InitializeTextBuffer(void)
     textBuffer.hasSelectionStarted = false;
     textBuffer.hasAllSelected = false;
     textBuffer.hasSelection = false;
+    textBuffer.renderSelection = false;
 }
 
 void InitializeLineBuffer(void)
@@ -193,6 +194,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
         case KEY_ENTER:
             InsertChar(&textBuffer, '\n');
             textBuffer.cursorPos.y++;
+            ClearSelectionIndicator();
             break;
 
         case KEY_BACKSPACE:
@@ -205,24 +207,29 @@ void ProcessKey(int key, bool ctrl, bool shift)
             {
                 RemoveChar(&textBuffer);
             }
+            ClearSelectionIndicator();
             break;
 
         case KEY_ESCAPE:
             if (textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
+            ClearSelectionIndicator();
             break;
 
         case KEY_UP:
             CalculateCursorPosition(KEY_UP);
+            ClearSelectionIndicator();
             break;
 
         case KEY_DOWN:
             CalculateCursorPosition(KEY_DOWN);
+            ClearSelectionIndicator();
             break;
 
         case KEY_LEFT:
             if (ctrl)
             {
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                ClearSelectionIndicator();
             }
             else if (shift)
             {
@@ -231,6 +238,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             else
             {
                 CalculateCursorPosition(KEY_LEFT);
+                ClearSelectionIndicator();
             }
             break;
 
@@ -238,6 +246,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             if (ctrl)
             {
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                ClearSelectionIndicator();
             }
             else if (shift)
             {
@@ -246,6 +255,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             else
             {
                 CalculateCursorPosition(KEY_RIGHT);
+                ClearSelectionIndicator();
             }
             break;
 
@@ -287,6 +297,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
                         textBuffer.cursorPos.y++;
                     }
                 }
+                if (!textBuffer.renderSelection) textBuffer.renderSelection = false;
             }
             break;
 
@@ -296,6 +307,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
 
         case KEY_S:
             if (ctrl) SaveFile();
+            ClearSelectionIndicator();
             break;
 
         default:
@@ -316,6 +328,7 @@ void ProcessKeyDownMovement(int key, bool shift)
             keyDownElapsedTime = 0.0f;
         }
         RecordCursorActivity();
+        ClearSelectionIndicator();
     }
 }
 
@@ -339,7 +352,7 @@ void RenderTextBuffer(void)
     DrawSidebar(firstVisibleLine, lastVisibleLine, lineHeight, scroll.y);
     DrawTextLines(firstVisibleLine, lastVisibleLine, lineHeight, scroll);
     DrawCursor(lineHeight);
-    if (textBuffer.hasSelection) DrawSelectionIndicator();
+    DrawSelectionIndicator();
 }
 
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
@@ -536,6 +549,7 @@ void CalculateSelection(int key)
                 textBuffer.selectionStart = textBuffer.cursorPos.x;
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
+                textBuffer.renderSelection = true;
             }
             break;
 
@@ -559,6 +573,7 @@ void CalculateSelection(int key)
                 textBuffer.selectionEnd = textBuffer.cursorPos.x;
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
+                textBuffer.renderSelection = true;
             }
             break;
 
@@ -570,6 +585,7 @@ void CalculateSelection(int key)
                 textBuffer.hasSelectionStarted = false;
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = true;
+                textBuffer.renderSelection = true;
             }
             break;
 
@@ -580,25 +596,52 @@ void CalculateSelection(int key)
 
 void DrawSelectionIndicator(void)
 {
+    if (!textBuffer.hasSelection || !textBuffer.renderSelection) return;
     float lineHeight = FONT_SIZE + TEXT_MARGIN;
-
-    for (int i = textBuffer.selectionStart; i <= textBuffer.selectionEnd; i++)
+    int selStart = textBuffer.selectionStart;
+    int selEnd = textBuffer.selectionEnd;
+    if (selStart > selEnd)
     {
-        int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
-        int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
-        char currentLine[1024];
-        strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
-        currentLine[charsInLine] = '\0';
+        int tmp = selStart;
+        selStart = selEnd;
+        selEnd = tmp;
+    }
 
-        Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
-        int cursorX = sidebarWidth + (2 * TEXT_MARGIN) + textSize.x;
-        int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight);
+    for (int i = 0; i < textBuffer.lineCount; i++)
+    {
+        int lineStart = lineBuffer[i].lineStart;
+        int lineEnd = lineBuffer[i].lineEnd;
+
+        int start = (selStart > lineStart) ? selStart : lineStart;
+        int end = (selEnd < lineEnd) ? selEnd : lineEnd;
+        if (end <= start) continue;
+
+        int prefixLen = start - lineStart;
+        char prefix[1024];
+        strncpy(prefix, &textBuffer.text[lineStart], prefixLen);
+        prefix[prefixLen] = '\0';
+        Vector2 prefixSize = MeasureTextEx(font, prefix, FONT_SIZE, TEXT_MARGIN);
+
+        int selectionLen = end - start;
+        char selectionText[1024];
+        strncpy(selectionText, &textBuffer.text[start], selectionLen);
+        selectionText[selectionLen] = '\0';
+        Vector2 selectionSize = MeasureTextEx(font, selectionText, FONT_SIZE, TEXT_MARGIN);
+
+        int rectX = sidebarWidth + TEXT_MARGIN + (int)scroll.x + (int)prefixSize.x;
+        int rectY = TEXT_MARGIN + (int)(i * lineHeight) + (int)scroll.y;
 
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-            DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, BLUE);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, GRAY);
         EndBlendMode();
     }
+}
+
+void ClearSelectionIndicator(void)
+{
+    if (textBuffer.renderSelection) textBuffer.renderSelection = false;
+    if (textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
 }
 
 /* FILE HANDLING */
@@ -640,6 +683,7 @@ void LoadFile(void)
     textBuffer.hasSelectionStarted = false;
     textBuffer.hasAllSelected = false;
     textBuffer.hasSelection = false;
+    textBuffer.renderSelection = false;
 
     TextBufferController();
 }

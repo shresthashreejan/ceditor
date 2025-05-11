@@ -15,6 +15,7 @@ typedef struct {
     bool hasSelectionStarted;
     bool hasAllSelected;
     bool hasSelection;
+    bool renderSelection;
 } TextBuffer;
 
 typedef struct {
@@ -49,6 +50,7 @@ void DrawCursor(float lineHeight);
 void RecordCursorActivity(void);
 void UpdateCursorState(void);
 void DrawSelectionIndicator(void);
+void ClearSelectionIndicator(void);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
 
