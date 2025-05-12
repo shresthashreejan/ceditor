@@ -51,6 +51,7 @@ void SetupTextBuffer(void)
     lastBlinkTime = GetTime();
     font = GetFont();
     UpdateSidebarWidth();
+    TextBufferController();
 }
 
 void InitializeTextBuffer(void)
