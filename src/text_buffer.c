@@ -403,8 +403,8 @@ void DrawCursor(float lineHeight)
         currentLine[charsInLine] = '\0';
 
         Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
-        int cursorX = sidebarWidth + (2 * TEXT_MARGIN) + textSize.x;
-        int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight);
+        int cursorX = sidebarWidth + (2 * TEXT_MARGIN) + textSize.x + scroll.x;
+        int cursorY = TEXT_MARGIN + (textBuffer.cursorPos.y * lineHeight) + scroll.y;
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
             DrawRectangle(cursorX, cursorY, FONT_SIZE / 2, FONT_SIZE, RAYWHITE);
