@@ -10,16 +10,15 @@ A very buggy text editor missing basic features (for now), written in C and Rayl
 - Copy and paste functions
 - File read/write
 - Proper cursor blinking
+- Visual indicator for text selection
 
 ### Planned features
-- Undo support
-- Better text navigation
-- Save with custom file path
-- System clipboard access
-- Better font aliasing
-- Visual indicator for text selection
-- Text search
 - Line number navigation
+- Save with custom file path
+- Better text navigation
+- System clipboard access
+- Undo support
+- Text search
 - A lot of refactoring
 
 ![ceditor screenshot](assets/images/ceditor.png)

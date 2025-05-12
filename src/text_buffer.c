@@ -528,6 +528,15 @@ int CalculateCursorPosX(int previousY)
     return (newXPos > newLineEnd) ? newLineEnd : newXPos;
 }
 
+void NavigateToLineNumber(int lineNumber)
+{
+    if (lineNumber && lineNumber > 0 && lineNumber <= textBuffer.lineCount)
+    {
+        textBuffer.cursorPos.y = lineNumber;
+        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+    }
+}
+
 /* SELECTION */
 void CalculateSelection(int key)
 {
