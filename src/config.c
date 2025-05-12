@@ -13,6 +13,7 @@ void SetupConfiguration(void)
 {
     SetTargetFPS(0);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, CEDITOR);
     SetWindowMinSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     SetExitKey(KEY_NULL);
@@ -38,5 +39,5 @@ Font GetFont(void)
 
 void LoadCustomFont(void)
 {
-    customFont = LoadFontEx("./assets/fonts/JuliaMono-Medium.ttf", FONT_SIZE * 2, NULL, 0);
+    customFont = LoadFontEx("./assets/fonts/VictorMono-Regular.ttf", FONT_SIZE, NULL, 0);
 }
