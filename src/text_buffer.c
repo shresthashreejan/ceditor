@@ -11,7 +11,6 @@
 #include "constants.h"
 #include "config.h"
 
-Font font;
 TextBuffer textBuffer;
 LineBuffer *lineBuffer = NULL;
 const char *filePath = NULL;
@@ -49,7 +48,6 @@ void SetupTextBuffer(void)
     InitializeTextBuffer();
     InitializeLineBuffer();
     lastBlinkTime = GetTime();
-    font = GetFont();
     UpdateSidebarWidth();
     TextBufferController();
 }
@@ -339,7 +337,7 @@ void RenderTextBuffer(void)
     float totalWidth = maxLineWidth + (2 * TEXT_MARGIN);
     float totalHeight = (textBuffer.lineCount * lineHeight) + TEXT_MARGIN;
 
-    viewport = (Rectangle){sidebarWidth, 0, GetScreenWidth() - sidebarWidth, GetScreenHeight()};
+    viewport = (Rectangle){sidebarWidth, 0, GetScreenWidth() - sidebarWidth, GetScreenHeight() - BOTTOM_BAR_HEIGHT};
     totalView = (Rectangle){0, 0, totalWidth, totalHeight};
 
     int firstVisibleLine = (int)fmaxf(0, -scroll.y / lineHeight);
@@ -352,12 +350,13 @@ void RenderTextBuffer(void)
     DrawSidebar(firstVisibleLine, lastVisibleLine, lineHeight, scroll.y);
     DrawTextLines(firstVisibleLine, lastVisibleLine, lineHeight, scroll);
     DrawCursor(lineHeight);
+    DrawBottomBar();
     DrawSelectionIndicator();
 }
 
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
 {
-    BeginScissorMode(0, 0, sidebarWidth, GetScreenHeight());
+    BeginScissorMode(0, 0, sidebarWidth, GetScreenHeight() - BOTTOM_BAR_HEIGHT);
         if (lastVisibleLine == 0) lastVisibleLine += 1;
         for (int i = firstVisibleLine; i < lastVisibleLine; i++)
         {
@@ -412,6 +411,11 @@ void DrawCursor(float lineHeight)
         EndBlendMode();
     }
     BlinkCursor();
+}
+
+void DrawBottomBar(void)
+{
+    DrawRectangle(0, GetScreenHeight() - BOTTOM_BAR_HEIGHT, GetScreenWidth(), BOTTOM_BAR_HEIGHT, BOTTOM_BAR_COLOR);
 }
 
 /* CURSOR */

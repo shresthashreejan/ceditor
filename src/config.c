@@ -7,7 +7,7 @@
 #include "screen.h"
 #include "text_buffer.h"
 
-Font customFont;
+Font font;
 
 void SetupConfiguration(void)
 {
@@ -28,16 +28,11 @@ void LoadResources(void)
 
 void UnloadResources(void)
 {
-    UnloadFont(customFont);
+    UnloadFont(font);
     FreeBufferMemory();
-}
-
-Font GetFont(void)
-{
-    return customFont;
 }
 
 void LoadCustomFont(void)
 {
-    customFont = LoadFontEx("./assets/fonts/VictorMono-Regular.ttf", FONT_SIZE, NULL, 0);
+    font = LoadFontEx("./assets/fonts/VictorMono-Regular.ttf", FONT_SIZE, NULL, 0);
 }

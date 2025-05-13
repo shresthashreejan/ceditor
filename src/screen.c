@@ -1,8 +1,11 @@
+#include "stdio.h"
+
 #include "raylib.h"
 
 #include "screen.h"
 #include "constants.h"
 #include "text_buffer.h"
+#include "config.h"
 
 bool showFps = false;
 
@@ -20,5 +23,20 @@ void RenderFrameRate(void)
     {
         showFps = !showFps;
     }
-    if (showFps) DrawFPS(GetScreenWidth() - 100, GetScreenHeight() - FONT_SIZE);
+    if (showFps) DrawCustomFPS();
+}
+
+void DrawCustomFPS(void)
+{
+    char fpsText[32];
+    sprintf(fpsText, "%d FPS", GetFPS());
+
+    float spacing = 1.0f;
+
+    Vector2 position = {
+        GetScreenWidth() - (BOTTOM_BAR_FONT_SIZE * 5),
+        GetScreenHeight() - BOTTOM_BAR_FONT_SIZE
+    };
+
+    DrawTextEx(font, fpsText, position, BOTTOM_BAR_FONT_SIZE, spacing, WHITE);
 }
