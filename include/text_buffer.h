@@ -52,7 +52,7 @@ void UpdateCursorState(void);
 void DrawSelectionIndicator(void);
 void ClearSelectionIndicator(void);
 void NavigateToLineNumber(int lineNumber);
-void DrawBottomBar(void);
+void DrawLineNumberNavInput(void);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
 

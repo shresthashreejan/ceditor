@@ -10,11 +10,13 @@
 #include "text_buffer.h"
 #include "constants.h"
 #include "config.h"
+#include "screen.h"
 
 TextBuffer textBuffer;
 LineBuffer *lineBuffer = NULL;
 const char *filePath = NULL;
 char *copiedText = NULL;
+char lineNumberInput[32];
 int lineBufferCapacity = 0;
 int sidebarWidth = SIDEBAR_WIDTH;
 int nonPrintableKeys[] = {
@@ -28,7 +30,8 @@ int nonPrintableKeys[] = {
     KEY_C,
     KEY_V,
     KEY_A,
-    KEY_S
+    KEY_S,
+    KEY_G
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 float keyDownElapsedTime = 0.0f;
@@ -37,10 +40,12 @@ float maxLineWidth = 0;
 float lastCursorUpdateTime;
 double lastBlinkTime;
 bool cursorIdle = true;
+bool showLineNumberInput = false;
 Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
 Rectangle totalView = {0};
 Rectangle panelView = {0};
+Rectangle inputBox = {0};
 
 /* SETUP */
 void SetupTextBuffer(void)
@@ -50,6 +55,7 @@ void SetupTextBuffer(void)
     lastBlinkTime = GetTime();
     UpdateSidebarWidth();
     TextBufferController();
+    inputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
 }
 
 void InitializeTextBuffer(void)
@@ -153,6 +159,8 @@ void UpdateSidebarWidth(void)
 /* KEY CONTROLLER */
 bool KeyController(void)
 {
+    if (showLineNumberInput) return false;
+
     int key = GetCharPressed();
     bool isAnyKeyPressed = false;
     while (key > 0)
@@ -308,6 +316,10 @@ void ProcessKey(int key, bool ctrl, bool shift)
             ClearSelectionIndicator();
             break;
 
+        case KEY_G:
+            if (ctrl) showLineNumberInput = true;
+            break;
+
         default:
             break;
     }
@@ -352,6 +364,7 @@ void RenderTextBuffer(void)
     DrawCursor(lineHeight);
     DrawBottomBar();
     DrawSelectionIndicator();
+    DrawLineNumberNavInput();
 }
 
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
@@ -413,9 +426,26 @@ void DrawCursor(float lineHeight)
     BlinkCursor();
 }
 
-void DrawBottomBar(void)
+void DrawLineNumberNavInput(void)
 {
-    DrawRectangle(0, GetScreenHeight() - BOTTOM_BAR_HEIGHT, GetScreenWidth(), BOTTOM_BAR_HEIGHT, BOTTOM_BAR_COLOR);
+    if (showLineNumberInput)
+    {
+        GuiTextBox(inputBox, lineNumberInput, 256, showLineNumberInput);
+        DrawOperationHelpText(KEY_G);
+        if (IsKeyPressed(KEY_ENTER))
+        {
+            int line = atoi(lineNumberInput);
+            if (line > 0 && line < textBuffer.lineCount) NavigateToLineNumber(line);
+            showLineNumberInput = false;
+            strcpy(lineNumberInput, "");
+        }
+
+        if (IsKeyPressed(KEY_ESCAPE))
+        {
+            showLineNumberInput = false;
+            strcpy(lineNumberInput, "");
+        }
+    }
 }
 
 /* CURSOR */
@@ -536,7 +566,7 @@ void NavigateToLineNumber(int lineNumber)
 {
     if (lineNumber && lineNumber > 0 && lineNumber <= textBuffer.lineCount)
     {
-        textBuffer.cursorPos.y = lineNumber;
+        textBuffer.cursorPos.y = lineNumber - 1;
         textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
     }
 }

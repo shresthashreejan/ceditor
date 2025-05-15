@@ -31,12 +31,36 @@ void DrawCustomFPS(void)
     char fpsText[32];
     sprintf(fpsText, "%d FPS", GetFPS());
 
-    float spacing = 1.0f;
-
     Vector2 position = {
         GetScreenWidth() - (BOTTOM_BAR_FONT_SIZE * 5),
         GetScreenHeight() - BOTTOM_BAR_FONT_SIZE
     };
 
-    DrawTextEx(font, fpsText, position, BOTTOM_BAR_FONT_SIZE, spacing, WHITE);
+    DrawTextEx(font, fpsText, position, BOTTOM_BAR_FONT_SIZE, DRAW_TEXT_SPACING, WHITE);
+}
+
+void DrawBottomBar(void)
+{
+    DrawRectangle(0, GetScreenHeight() - BOTTOM_BAR_HEIGHT, GetScreenWidth(), BOTTOM_BAR_HEIGHT, BOTTOM_BAR_COLOR);
+}
+
+void DrawOperationHelpText(int key)
+{
+    char helpText[32];
+    switch (key)
+    {
+        case KEY_G:
+            sprintf(helpText, "Enter line number.");
+            RenderHelpText(helpText);
+            break;
+
+        default:
+            break;
+    }
+}
+
+void RenderHelpText(char helpText[32])
+{
+    Vector2 position = {0, GetScreenHeight() - BOTTOM_BAR_FONT_SIZE};
+    DrawTextEx(font, helpText, position, BOTTOM_BAR_FONT_SIZE, DRAW_TEXT_SPACING, WHITE);
 }
