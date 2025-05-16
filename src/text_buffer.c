@@ -469,6 +469,7 @@ void DrawSaveFileInput(void)
     if (showSaveFileInput)
     {
         GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
+        DrawOperationHelpText(KEY_S);
         filePath = saveFileInput;
 
         if (IsKeyPressed(KEY_ENTER))

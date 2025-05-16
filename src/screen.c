@@ -46,11 +46,16 @@ void DrawBottomBar(void)
 
 void DrawOperationHelpText(int key)
 {
-    char helpText[32];
+    char helpText[256];
     switch (key)
     {
         case KEY_G:
             sprintf(helpText, "Enter line number.");
+            RenderHelpText(helpText);
+            break;
+
+        case KEY_S:
+            sprintf(helpText, "Enter absolute file path to save.");
             RenderHelpText(helpText);
             break;
 
@@ -59,7 +64,7 @@ void DrawOperationHelpText(int key)
     }
 }
 
-void RenderHelpText(char helpText[32])
+void RenderHelpText(char helpText[256])
 {
     Vector2 position = {0, GetScreenHeight() - BOTTOM_BAR_FONT_SIZE};
     DrawTextEx(font, helpText, position, BOTTOM_BAR_FONT_SIZE, DRAW_TEXT_SPACING, WHITE);

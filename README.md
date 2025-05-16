@@ -11,10 +11,10 @@ A very buggy text editor missing basic features (for now), written in C and Rayl
 - File read/write
 - Proper cursor blinking
 - Visual indicator for text selection
-
-### Planned features
 - Line number navigation
 - Save with custom file path
+
+### Planned features
 - Better text navigation
 - System clipboard access
 - Undo support
