@@ -53,6 +53,7 @@ void DrawSelectionIndicator(void);
 void ClearSelectionIndicator(void);
 void NavigateToLineNumber(int lineNumber);
 void DrawLineNumberNavInput(void);
+void DrawSaveFileInput(void);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
 

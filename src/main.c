@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
         filePath = argv[1];
         LoadFile();
     }
-    if (!filePath) filePath = "untitled.txt";
     while (!WindowShouldClose())
     {
         BeginDrawing();

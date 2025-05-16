@@ -17,6 +17,7 @@ LineBuffer *lineBuffer = NULL;
 const char *filePath = NULL;
 char *copiedText = NULL;
 char lineNumberInput[32];
+char saveFileInput[256];
 int lineBufferCapacity = 0;
 int sidebarWidth = SIDEBAR_WIDTH;
 int nonPrintableKeys[] = {
@@ -41,11 +42,14 @@ float lastCursorUpdateTime;
 double lastBlinkTime;
 bool cursorIdle = true;
 bool showLineNumberInput = false;
+bool showSaveFileInput = false;
+bool hasFile = false;
 Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
 Rectangle totalView = {0};
 Rectangle panelView = {0};
-Rectangle inputBox = {0};
+Rectangle lineNumberInputBox = {0};
+Rectangle saveFileInputBox = {0};
 
 /* SETUP */
 void SetupTextBuffer(void)
@@ -55,7 +59,8 @@ void SetupTextBuffer(void)
     lastBlinkTime = GetTime();
     UpdateSidebarWidth();
     TextBufferController();
-    inputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
+    lineNumberInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
+    saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH * 2)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT * 2)) / 2, INPUT_BOX_WIDTH * 2, INPUT_BOX_HEIGHT * 2};
 }
 
 void InitializeTextBuffer(void)
@@ -159,7 +164,7 @@ void UpdateSidebarWidth(void)
 /* KEY CONTROLLER */
 bool KeyController(void)
 {
-    if (showLineNumberInput) return false;
+    if (showLineNumberInput || showSaveFileInput) return false;
 
     int key = GetCharPressed();
     bool isAnyKeyPressed = false;
@@ -312,8 +317,18 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_S:
-            if (ctrl) SaveFile();
-            ClearSelectionIndicator();
+            if (ctrl)
+            {
+                if (!hasFile || shift)
+                {
+                    showSaveFileInput = true;
+                }
+                else
+                {
+                    SaveFile();
+                }
+                ClearSelectionIndicator();
+            }
             break;
 
         case KEY_G:
@@ -365,6 +380,7 @@ void RenderTextBuffer(void)
     DrawBottomBar();
     DrawSelectionIndicator();
     DrawLineNumberNavInput();
+    DrawSaveFileInput();
 }
 
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
@@ -430,7 +446,7 @@ void DrawLineNumberNavInput(void)
 {
     if (showLineNumberInput)
     {
-        GuiTextBox(inputBox, lineNumberInput, 256, showLineNumberInput);
+        GuiTextBox(lineNumberInputBox, lineNumberInput, 32, showLineNumberInput);
         DrawOperationHelpText(KEY_G);
         if (IsKeyPressed(KEY_ENTER))
         {
@@ -444,6 +460,28 @@ void DrawLineNumberNavInput(void)
         {
             showLineNumberInput = false;
             strcpy(lineNumberInput, "");
+        }
+    }
+}
+
+void DrawSaveFileInput(void)
+{
+    if (showSaveFileInput)
+    {
+        GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
+        filePath = saveFileInput;
+
+        if (IsKeyPressed(KEY_ENTER))
+        {
+            SaveFile();
+            showSaveFileInput = false;
+            strcpy(saveFileInput, "");
+        }
+
+        if (IsKeyPressed(KEY_ESCAPE))
+        {
+            showSaveFileInput = false;
+            strcpy(saveFileInput, "");
         }
     }
 }
@@ -728,6 +766,7 @@ void LoadFile(void)
     textBuffer.hasSelection = false;
     textBuffer.renderSelection = false;
 
+    hasFile = true;
     TextBufferController();
 }
 
