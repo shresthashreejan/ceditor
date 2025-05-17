@@ -39,6 +39,7 @@ float keyDownElapsedTime = 0.0f;
 float keyDownDelay = 0.0f;
 float maxLineWidth = 0;
 float lastCursorUpdateTime;
+float lineHeight = FONT_SIZE + TEXT_MARGIN;
 double lastBlinkTime;
 bool cursorIdle = true;
 bool showLineNumberInput = false;
@@ -151,6 +152,7 @@ void TextBufferController(void)
             UpdateSidebarWidth();
         }
     }
+    UpdateView();
 }
 
 void UpdateSidebarWidth(void)
@@ -360,7 +362,6 @@ void ProcessKeyDownMovement(int key, bool shift)
 /* RENDERING */
 void RenderTextBuffer(void)
 {
-    float lineHeight = FONT_SIZE + TEXT_MARGIN;
     float totalWidth = maxLineWidth + (2 * TEXT_MARGIN);
     float totalHeight = (textBuffer.lineCount * lineHeight) + TEXT_MARGIN;
 
@@ -370,7 +371,6 @@ void RenderTextBuffer(void)
     int firstVisibleLine = (int)fmaxf(0, -scroll.y / lineHeight);
     int lastVisibleLine = (int)fminf(textBuffer.lineCount, firstVisibleLine + (panelView.height / lineHeight) + 2);
 
-    // UpdateView();
     GuiScrollPanel(viewport, NULL, totalView, &scroll, &panelView);
     DrawRectangle(0, 0, sidebarWidth, GetScreenHeight(), SIDEBAR_COLOR);
 
@@ -590,10 +590,14 @@ void CalculateCursorPosition(int key)
         default:
             break;
     }
+    UpdateView();
 }
 
 int CalculateCursorPosX(int previousY)
 {
+    if (textBuffer.cursorPos.y < 0) return lineBuffer[previousY].lineStart;
+    if (textBuffer.cursorPos.y >= textBuffer.lineCount) return lineBuffer[previousY].lineEnd;
+
     int offset = textBuffer.cursorPos.x - lineBuffer[previousY].lineStart;
     int newLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
     int newLineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
@@ -607,6 +611,44 @@ void NavigateToLineNumber(int lineNumber)
     {
         textBuffer.cursorPos.y = lineNumber - 1;
         textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+    }
+}
+
+void UpdateView(void)
+{
+    if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) return;
+
+    float cursorX;
+    float cursorY = textBuffer.cursorPos.y * lineHeight;
+
+    int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+    int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
+    char currentLine[1024];
+    strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
+    currentLine[charsInLine] = '\0';
+
+    Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
+    cursorX = textSize.x;
+
+    float cursorScreenX = sidebarWidth + TEXT_MARGIN + cursorX + scroll.x;
+    float cursorScreenY = TEXT_MARGIN + cursorY + scroll.y;
+
+    if (cursorScreenX < sidebarWidth + TEXT_MARGIN)
+    {
+        scroll.x += (sidebarWidth + TEXT_MARGIN) - cursorScreenX;
+    }
+    else if (cursorScreenX > (panelView.width + sidebarWidth - TEXT_MARGIN))
+    {
+        scroll.x -= cursorScreenX - (panelView.width + sidebarWidth - TEXT_MARGIN);
+    }
+
+    if (cursorScreenY < TEXT_MARGIN)
+    {
+        scroll.y += TEXT_MARGIN - cursorScreenY;
+    }
+    else if (cursorScreenY > panelView.height - lineHeight)
+    {
+        scroll.y -= cursorScreenY - (panelView.height - lineHeight);
     }
 }
 
@@ -674,12 +716,12 @@ void CalculateSelection(int key)
         default:
             break;
     }
+    UpdateView();
 }
 
 void DrawSelectionIndicator(void)
 {
     if (!textBuffer.hasSelection || !textBuffer.renderSelection) return;
-    float lineHeight = FONT_SIZE + TEXT_MARGIN;
     int selStart = textBuffer.selectionStart;
     int selEnd = textBuffer.selectionEnd;
     if (selStart > selEnd)
