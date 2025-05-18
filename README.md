@@ -13,9 +13,9 @@ A very buggy text editor missing basic features (for now), written in C and Rayl
 - Visual indicator for text selection
 - Line number navigation
 - Save with custom file path
+- System clipboard access
 
 ### Planned features
-- System clipboard access
 - Undo support
 - Text search
 - A lot of refactoring

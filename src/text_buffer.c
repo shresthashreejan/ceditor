@@ -282,35 +282,47 @@ void ProcessKey(int key, bool ctrl, bool shift)
                     copiedText = (char *)malloc(selectionLength + 1);
                     strncpy(copiedText, &textBuffer.text[textBuffer.selectionStart], selectionLength);
                     copiedText[selectionLength] = '\0';
+                    SetClipboardText(copiedText);
                     textBuffer.hasSelectionStarted = false;
                 }
             }
             break;
 
         case KEY_V:
-            if (ctrl && copiedText != NULL)
+            if (ctrl)
             {
-                int copiedLength = strlen(copiedText);
-                if (textBuffer.length + copiedLength >= textBuffer.capacity)
+                const char *clipboardText = GetClipboardText();
+                if (clipboardText)
                 {
-                    textBuffer.capacity = (textBuffer.length + copiedLength) * 2;
-                    textBuffer.text = (char *)realloc(textBuffer.text, textBuffer.capacity);
+                    if (copiedText != NULL) free(copiedText);
+                    copiedText = malloc(strlen(clipboardText) + 1);
+                    if (copiedText) strcpy(copiedText, clipboardText);
                 }
 
-                memmove(&textBuffer.text[(int)textBuffer.cursorPos.x + copiedLength], &textBuffer.text[(int)textBuffer.cursorPos.x], textBuffer.length - textBuffer.cursorPos.x + 1);
-                memcpy(&textBuffer.text[(int)textBuffer.cursorPos.x], copiedText, copiedLength);
-
-                textBuffer.length += copiedLength;
-                textBuffer.cursorPos.x += copiedLength;
-                textBuffer.text[textBuffer.length] = '\0';
-                for (int i = 0; i < copiedLength; i++)
+                if (copiedText != NULL)
                 {
-                    if (copiedText[i] == '\n')
+                    int copiedLength = strlen(copiedText);
+                    if (textBuffer.length + copiedLength >= textBuffer.capacity)
                     {
-                        textBuffer.cursorPos.y++;
+                        textBuffer.capacity = (textBuffer.length + copiedLength) * 2;
+                        textBuffer.text = (char *)realloc(textBuffer.text, textBuffer.capacity);
                     }
+
+                    memmove(&textBuffer.text[(int)textBuffer.cursorPos.x + copiedLength], &textBuffer.text[(int)textBuffer.cursorPos.x], textBuffer.length - textBuffer.cursorPos.x + 1);
+                    memcpy(&textBuffer.text[(int)textBuffer.cursorPos.x], copiedText, copiedLength);
+
+                    textBuffer.length += copiedLength;
+                    textBuffer.cursorPos.x += copiedLength;
+                    textBuffer.text[textBuffer.length] = '\0';
+                    for (int i = 0; i < copiedLength; i++)
+                    {
+                        if (copiedText[i] == '\n')
+                        {
+                            textBuffer.cursorPos.y++;
+                        }
+                    }
+                    if (!textBuffer.renderSelection) textBuffer.renderSelection = false;
                 }
-                if (!textBuffer.renderSelection) textBuffer.renderSelection = false;
             }
             break;
 
@@ -757,7 +769,7 @@ void DrawSelectionIndicator(void)
 
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, GRAY);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, WHITE);
         EndBlendMode();
     }
 }
