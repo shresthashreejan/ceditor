@@ -15,6 +15,7 @@
 TextBuffer textBuffer;
 LineBuffer *lineBuffer = NULL;
 PreviousBufferState prevBufferState = { NULL, 0, 0, 0 };
+CurrentBufferState currentBufferState = { NULL, 0, 0, 0 };
 const char *filePath = NULL;
 char *copiedText = NULL;
 char lineNumberInput[32];
@@ -34,7 +35,8 @@ int nonPrintableKeys[] = {
     KEY_A,
     KEY_S,
     KEY_G,
-    KEY_Z
+    KEY_Z,
+    KEY_R
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 float keyDownElapsedTime = 0.0f;
@@ -102,6 +104,7 @@ void InsertChar(TextBuffer *buffer, char ch)
     buffer->length++;
     buffer->cursorPos.x++;
     buffer->text[buffer->length] = '\0';
+    StoreCurrentBufferState();
 }
 
 void RemoveChar(TextBuffer *buffer)
@@ -117,6 +120,7 @@ void RemoveChar(TextBuffer *buffer)
         {
             buffer->cursorPos.y--;
         }
+        StoreCurrentBufferState();
     }
 }
 
@@ -167,17 +171,24 @@ void UpdateSidebarWidth(void)
 
 void StorePreviousBufferState(void)
 {
-    if (prevBufferState.text != NULL)
-    {
-        free(prevBufferState.text);
-        prevBufferState.text = NULL;
-    }
+    FreePreviousBufferState();
 
     prevBufferState.length = textBuffer.length;
     prevBufferState.cursorX = (int)textBuffer.cursorPos.x;
     prevBufferState.cursorY = (int)textBuffer.cursorPos.y;
     prevBufferState.text = (char *)malloc(textBuffer.length + 1);
     if (prevBufferState.text) strcpy(prevBufferState.text, textBuffer.text);
+}
+
+void StoreCurrentBufferState(void)
+{
+    FreeCurrentBufferState();
+
+    currentBufferState.length = textBuffer.length;
+    currentBufferState.cursorX = (int)textBuffer.cursorPos.x;
+    currentBufferState.cursorY = (int)textBuffer.cursorPos.y;
+    currentBufferState.text = (char *)malloc(textBuffer.length + 1);
+    if (currentBufferState.text) strcpy(currentBufferState.text, textBuffer.text);
 }
 
 /* KEY CONTROLLER */
@@ -231,8 +242,10 @@ void ProcessKey(int key, bool ctrl, bool shift)
         case KEY_BACKSPACE:
             if (textBuffer.hasSelection && textBuffer.hasAllSelected)
             {
+                StorePreviousBufferState();
                 FreeTextBuffer();
                 InitializeTextBuffer();
+                StoreCurrentBufferState();
             }
             else
             {
@@ -340,6 +353,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
                         }
                     }
                     if (!textBuffer.renderSelection) textBuffer.renderSelection = false;
+                    StoreCurrentBufferState();
                 }
             }
             break;
@@ -382,6 +396,26 @@ void ProcessKey(int key, bool ctrl, bool shift)
                     textBuffer.cursorPos.y = prevBufferState.cursorY;
                     textBuffer.capacity = prevBufferState.length + 1;
                     textBuffer.text[prevBufferState.length] = '\0';
+                    TextBufferController();
+                }
+            }
+            break;
+
+        case KEY_R:
+            if (ctrl && currentBufferState.text != NULL)
+            {
+                free(textBuffer.text);
+                textBuffer.text = NULL;
+                textBuffer.text = (char *)malloc(currentBufferState.length + 1);
+
+                if (textBuffer.text)
+                {
+                    strcpy(textBuffer.text, currentBufferState.text);
+                    textBuffer.length = currentBufferState.length;
+                    textBuffer.cursorPos.x = currentBufferState.cursorX;
+                    textBuffer.cursorPos.y = currentBufferState.cursorY;
+                    textBuffer.capacity = currentBufferState.length + 1;
+                    textBuffer.text[currentBufferState.length] = '\0';
                     TextBufferController();
                 }
             }
@@ -896,10 +930,19 @@ void FreeLineBuffer(void)
 
 void FreePreviousBufferState(void)
 {
-    if (prevBufferState.text)
+    if (prevBufferState.text != NULL)
     {
         free(prevBufferState.text);
         prevBufferState.text = NULL;
+    }
+}
+
+void FreeCurrentBufferState(void)
+{
+    if (currentBufferState.text != NULL)
+    {
+        free(currentBufferState.text);
+        currentBufferState.text = NULL;
     }
 }
 
@@ -908,4 +951,5 @@ void FreeBufferMemory(void)
     FreeTextBuffer();
     FreeLineBuffer();
     FreePreviousBufferState();
+    FreeCurrentBufferState();
 }
