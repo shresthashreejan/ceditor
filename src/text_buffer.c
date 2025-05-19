@@ -14,6 +14,7 @@
 
 TextBuffer textBuffer;
 LineBuffer *lineBuffer = NULL;
+PreviousBufferState prevBufferState = { NULL, 0, 0, 0 };
 const char *filePath = NULL;
 char *copiedText = NULL;
 char lineNumberInput[32];
@@ -32,7 +33,8 @@ int nonPrintableKeys[] = {
     KEY_V,
     KEY_A,
     KEY_S,
-    KEY_G
+    KEY_G,
+    KEY_Z
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 float keyDownElapsedTime = 0.0f;
@@ -60,8 +62,6 @@ void SetupTextBuffer(void)
     lastBlinkTime = GetTime();
     UpdateSidebarWidth();
     TextBufferController();
-    lineNumberInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
-    saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH * 2)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT * 2)) / 2, INPUT_BOX_WIDTH * 2, INPUT_BOX_HEIGHT * 2};
 }
 
 void InitializeTextBuffer(void)
@@ -91,6 +91,7 @@ void InitializeLineBuffer(void)
 /* TEXT BUFFER */
 void InsertChar(TextBuffer *buffer, char ch)
 {
+    StorePreviousBufferState();
     if (buffer->length + 1 >= buffer->capacity)
     {
         buffer->capacity *= 2;
@@ -105,6 +106,7 @@ void InsertChar(TextBuffer *buffer, char ch)
 
 void RemoveChar(TextBuffer *buffer)
 {
+    StorePreviousBufferState();
     if (buffer->cursorPos.x > 0)
     {
         memmove(&buffer->text[(int)buffer->cursorPos.x - 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
@@ -161,6 +163,21 @@ void UpdateSidebarWidth(void)
     snprintf(lineNumberStr, sizeof(lineNumberStr), "%d", textBuffer.lineCount);
     Vector2 numberSize = MeasureTextEx(font, lineNumberStr, FONT_SIZE, TEXT_MARGIN);
     sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
+}
+
+void StorePreviousBufferState(void)
+{
+    if (prevBufferState.text != NULL)
+    {
+        free(prevBufferState.text);
+        prevBufferState.text = NULL;
+    }
+
+    prevBufferState.length = textBuffer.length;
+    prevBufferState.cursorX = (int)textBuffer.cursorPos.x;
+    prevBufferState.cursorY = (int)textBuffer.cursorPos.y;
+    prevBufferState.text = (char *)malloc(textBuffer.length + 1);
+    if (prevBufferState.text) strcpy(prevBufferState.text, textBuffer.text);
 }
 
 /* KEY CONTROLLER */
@@ -301,6 +318,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
 
                 if (copiedText != NULL)
                 {
+                    StorePreviousBufferState();
                     int copiedLength = strlen(copiedText);
                     if (textBuffer.length + copiedLength >= textBuffer.capacity)
                     {
@@ -347,6 +365,26 @@ void ProcessKey(int key, bool ctrl, bool shift)
 
         case KEY_G:
             if (ctrl) showLineNumberInput = true;
+            break;
+
+        case KEY_Z:
+            if (ctrl && prevBufferState.text != NULL)
+            {
+                free(textBuffer.text);
+                textBuffer.text = NULL;
+                textBuffer.text = (char *)malloc(prevBufferState.length + 1);
+
+                if (textBuffer.text)
+                {
+                    strcpy(textBuffer.text, prevBufferState.text);
+                    textBuffer.length = prevBufferState.length;
+                    textBuffer.cursorPos.x = prevBufferState.cursorX;
+                    textBuffer.cursorPos.y = prevBufferState.cursorY;
+                    textBuffer.capacity = prevBufferState.length + 1;
+                    textBuffer.text[prevBufferState.length] = '\0';
+                    TextBufferController();
+                }
+            }
             break;
 
         default:
@@ -458,12 +496,13 @@ void DrawLineNumberNavInput(void)
 {
     if (showLineNumberInput)
     {
+        lineNumberInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(lineNumberInputBox, lineNumberInput, 32, showLineNumberInput);
         DrawOperationHelpText(KEY_G);
         if (IsKeyPressed(KEY_ENTER))
         {
             int line = atoi(lineNumberInput);
-            if (line > 0 && line < textBuffer.lineCount) NavigateToLineNumber(line);
+            if (line > 0 && line <= textBuffer.lineCount) NavigateToLineNumber(line);
             showLineNumberInput = false;
             strcpy(lineNumberInput, "");
         }
@@ -480,6 +519,7 @@ void DrawSaveFileInput(void)
 {
     if (showSaveFileInput)
     {
+        saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH * 2)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT * 2)) / 2, INPUT_BOX_WIDTH * 2, INPUT_BOX_HEIGHT * 2};
         GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
         DrawOperationHelpText(KEY_S);
         filePath = saveFileInput;
@@ -623,6 +663,7 @@ void NavigateToLineNumber(int lineNumber)
     {
         textBuffer.cursorPos.y = lineNumber - 1;
         textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+        UpdateView();
     }
 }
 
@@ -853,8 +894,18 @@ void FreeLineBuffer(void)
     lineBufferCapacity = 0;
 }
 
+void FreePreviousBufferState(void)
+{
+    if (prevBufferState.text)
+    {
+        free(prevBufferState.text);
+        prevBufferState.text = NULL;
+    }
+}
+
 void FreeBufferMemory(void)
 {
     FreeTextBuffer();
     FreeLineBuffer();
+    FreePreviousBufferState();
 }

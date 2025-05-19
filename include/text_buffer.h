@@ -25,6 +25,13 @@ typedef struct {
     int lineEnd;
 } LineBuffer;
 
+typedef struct {
+    char *text;
+    int length;
+    int cursorX;
+    int cursorY;
+} PreviousBufferState;
+
 void SetupTextBuffer(void);
 void InitializeTextBuffer(void);
 void InitializeLineBuffer(void);
@@ -55,6 +62,8 @@ void NavigateToLineNumber(int lineNumber);
 void DrawLineNumberNavInput(void);
 void DrawSaveFileInput(void);
 void UpdateView(void);
+void StorePreviousBufferState(void);
+void FreePreviousBufferState(void);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
 
