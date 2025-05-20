@@ -37,7 +37,8 @@ int nonPrintableKeys[] = {
     KEY_G,
     KEY_Z,
     KEY_R,
-    KEY_TAB
+    KEY_TAB,
+    KEY_DELETE
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 float keyDownElapsedTime = 0.0f;
@@ -108,14 +109,21 @@ void InsertChar(TextBuffer *buffer, char ch)
     StoreCurrentBufferState();
 }
 
-void RemoveChar(TextBuffer *buffer)
+void RemoveChar(TextBuffer *buffer, bool backspaceTrigger)
 {
     StorePreviousBufferState();
-    if (buffer->cursorPos.x > 0)
+    if ((backspaceTrigger && buffer->cursorPos.x > 0) || (!backspaceTrigger && buffer->cursorPos.x < buffer->length))
     {
-        memmove(&buffer->text[(int)buffer->cursorPos.x - 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
+        if (backspaceTrigger)
+        {
+            memmove(&buffer->text[(int)buffer->cursorPos.x - 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
+            buffer->cursorPos.x--;
+        }
+        else
+        {
+            memmove(&buffer->text[(int)buffer->cursorPos.x], &buffer->text[(int)buffer->cursorPos.x + 1], buffer->length - buffer->cursorPos.x);
+        }
         buffer->length--;
-        buffer->cursorPos.x--;
         buffer->text[buffer->length] = '\0';
         if (buffer->cursorPos.x == lineBuffer[(int)buffer->cursorPos.y - 1].lineEnd && buffer->cursorPos.y != 0)
         {
@@ -250,7 +258,22 @@ void ProcessKey(int key, bool ctrl, bool shift)
             }
             else
             {
-                RemoveChar(&textBuffer);
+                RemoveChar(&textBuffer, true);
+            }
+            ClearSelectionIndicator();
+            break;
+
+        case KEY_DELETE:
+            if (textBuffer.hasSelection && textBuffer.hasAllSelected)
+            {
+                StorePreviousBufferState();
+                FreeTextBuffer();
+                InitializeTextBuffer();
+                StoreCurrentBufferState();
+            }
+            else
+            {
+                RemoveChar(&textBuffer, false);
             }
             ClearSelectionIndicator();
             break;
