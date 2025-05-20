@@ -18,6 +18,5 @@ A very buggy text editor missing basic features (for now), written in C and Rayl
 
 ### Planned features
 - Text search
-- A lot of refactoring
 
 ![ceditor screenshot](assets/images/ceditor.png)

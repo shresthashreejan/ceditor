@@ -36,7 +36,8 @@ int nonPrintableKeys[] = {
     KEY_S,
     KEY_G,
     KEY_Z,
-    KEY_R
+    KEY_R,
+    KEY_TAB
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 float keyDownElapsedTime = 0.0f;
@@ -419,6 +420,14 @@ void ProcessKey(int key, bool ctrl, bool shift)
                     TextBufferController();
                 }
             }
+            break;
+
+        case KEY_TAB:
+            for (int i = 0; i < 4; i++)
+            {
+                InsertChar(&textBuffer, (char)KEY_SPACE);
+            }
+            ClearSelectionIndicator();
             break;
 
         default:
