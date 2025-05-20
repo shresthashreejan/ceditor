@@ -1,6 +1,6 @@
 # ceditor
 
-A very buggy text editor missing basic features (for now), written in C and Raylib.
+A minimal text editor built from scratch using C and Raylib.
 
 ### Features
 - Basic text input
@@ -14,9 +14,10 @@ A very buggy text editor missing basic features (for now), written in C and Rayl
 - Line number navigation
 - Save with custom file path
 - System clipboard access
-- Undo/Redo support
+- One level undo/redo support (no history stack)
 
 ### Planned features
 - Text search
+- Undo/Redo stack
 
 ![ceditor screenshot](assets/images/ceditor.png)
