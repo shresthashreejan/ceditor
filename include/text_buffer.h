@@ -43,7 +43,7 @@ void SetupTextBuffer(void);
 void InitializeTextBuffer(void);
 void InitializeLineBuffer(void);
 void InsertChar(TextBuffer *buffer, char ch);
-void RemoveChar(TextBuffer *buffer, bool backspaceTrigger);
+void RemoveChar(TextBuffer *buffer, int key);
 void TextBufferController(void);
 void FreeTextBuffer(void);
 void FreeLineBuffer(void);

@@ -106,15 +106,16 @@ void InsertChar(TextBuffer *buffer, char ch)
     buffer->length++;
     buffer->cursorPos.x++;
     buffer->text[buffer->length] = '\0';
+    TextBufferController();
     StoreCurrentBufferState();
 }
 
-void RemoveChar(TextBuffer *buffer, bool backspaceTrigger)
+void RemoveChar(TextBuffer *buffer, int key)
 {
     StorePreviousBufferState();
-    if ((backspaceTrigger && buffer->cursorPos.x > 0) || (!backspaceTrigger && buffer->cursorPos.x < buffer->length))
+    if ((key == KEY_BACKSPACE && buffer->cursorPos.x > 0) || (key == KEY_DELETE && buffer->cursorPos.x < buffer->length))
     {
-        if (backspaceTrigger)
+        if (key == KEY_BACKSPACE)
         {
             memmove(&buffer->text[(int)buffer->cursorPos.x - 1], &buffer->text[(int)buffer->cursorPos.x], buffer->length - buffer->cursorPos.x + 1);
             buffer->cursorPos.x--;
@@ -129,6 +130,7 @@ void RemoveChar(TextBuffer *buffer, bool backspaceTrigger)
         {
             buffer->cursorPos.y--;
         }
+        TextBufferController();
         StoreCurrentBufferState();
     }
 }
@@ -234,6 +236,8 @@ bool KeyController(void)
     if (IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, shift);
     if (IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, shift);
     if (IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, shift);
+    if (IsKeyDown(KEY_BACKSPACE)) ProcessKeyDownMovement(KEY_BACKSPACE, shift);
+    if (IsKeyDown(KEY_DELETE)) ProcessKeyDownMovement(KEY_DELETE, shift);
     if (IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
     return isAnyKeyPressed;
 }
@@ -258,7 +262,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             }
             else
             {
-                RemoveChar(&textBuffer, true);
+                RemoveChar(&textBuffer, KEY_BACKSPACE);
             }
             ClearSelectionIndicator();
             break;
@@ -273,7 +277,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             }
             else
             {
-                RemoveChar(&textBuffer, false);
+                RemoveChar(&textBuffer, KEY_DELETE);
             }
             ClearSelectionIndicator();
             break;
@@ -467,11 +471,18 @@ void ProcessKeyDownMovement(int key, bool shift)
     {
         if (keyDownElapsedTime >= KEY_DOWN_INTERVAL)
         {
-            if (shift) CalculateSelection(key); else CalculateCursorPosition(key);
+            if (key == KEY_BACKSPACE || key == KEY_DELETE)
+            {
+                RemoveChar(&textBuffer, key);
+            }
+            else
+            {
+                if (shift) CalculateSelection(key); else CalculateCursorPosition(key);
+            }
             keyDownElapsedTime = 0.0f;
         }
         RecordCursorActivity();
-        ClearSelectionIndicator();
+        if (!shift) ClearSelectionIndicator();
     }
 }
 
