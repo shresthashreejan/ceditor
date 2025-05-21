@@ -907,7 +907,7 @@ void LoadFile(void)
     FILE *file = fopen(filePath, "r");
     if (file == NULL)
     {
-        printf("Error: Unable to open file %s\n", filePath);
+        printf("Error: File not found at the specified path: %s\n", filePath);
         exit(1);
     }
 

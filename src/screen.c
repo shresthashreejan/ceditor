@@ -55,7 +55,7 @@ void DrawOperationHelpText(int key)
             break;
 
         case KEY_S:
-            sprintf(helpText, "Enter absolute file path to save.");
+            sprintf(helpText, "Enter file path to save.");
             RenderHelpText(helpText);
             break;
 
