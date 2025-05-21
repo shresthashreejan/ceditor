@@ -599,19 +599,22 @@ void DrawSaveFileInput(void)
         saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH * 2)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT * 2)) / 2, INPUT_BOX_WIDTH * 2, INPUT_BOX_HEIGHT * 2};
         GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
         DrawOperationHelpText(KEY_S);
-        filePath = saveFileInput;
 
-        if (IsKeyPressed(KEY_ENTER))
+        if (saveFileInput[0] != '\0')
         {
-            SaveFile();
-            showSaveFileInput = false;
-            strcpy(saveFileInput, "");
-        }
+            filePath = saveFileInput;
+            hasFile = true;
 
-        if (IsKeyPressed(KEY_ESCAPE))
-        {
-            showSaveFileInput = false;
-            strcpy(saveFileInput, "");
+            if (IsKeyPressed(KEY_ENTER))
+            {
+                SaveFile();
+                showSaveFileInput = false;
+            }
+
+            if (IsKeyPressed(KEY_ESCAPE))
+            {
+                showSaveFileInput = false;
+            }
         }
     }
 }
@@ -905,7 +908,7 @@ void LoadFile(void)
     if (file == NULL)
     {
         printf("Error: Unable to open file %s\n", filePath);
-        return;
+        exit(1);
     }
 
     fseek(file, 0, SEEK_END);
