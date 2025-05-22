@@ -14,8 +14,8 @@
 
 TextBuffer textBuffer;
 LineBuffer *lineBuffer = NULL;
-PreviousBufferState prevBufferState = { NULL, 0, 0, 0 };
-CurrentBufferState currentBufferState = { NULL, 0, 0, 0 };
+BufferSnapshot undoStack[HISTORY_LIMIT];
+BufferSnapshot redoStack[HISTORY_LIMIT];
 const char *filePath = NULL;
 char *copiedText = NULL;
 char lineNumberInput[32];
@@ -41,6 +41,8 @@ int nonPrintableKeys[] = {
     KEY_DELETE
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
+int undoTop = -1;
+int redoTop = -1;
 float keyDownElapsedTime = 0.0f;
 float keyDownDelay = 0.0f;
 float maxLineWidth = 0;
@@ -95,7 +97,7 @@ void InitializeLineBuffer(void)
 /* TEXT BUFFER */
 void InsertChar(TextBuffer *buffer, char ch)
 {
-    StorePreviousBufferState();
+    StoreUndo();
     if (buffer->length + 1 >= buffer->capacity)
     {
         buffer->capacity *= 2;
@@ -107,12 +109,11 @@ void InsertChar(TextBuffer *buffer, char ch)
     buffer->cursorPos.x++;
     buffer->text[buffer->length] = '\0';
     TextBufferController();
-    StoreCurrentBufferState();
 }
 
 void RemoveChar(TextBuffer *buffer, int key)
 {
-    StorePreviousBufferState();
+    StoreUndo();
     if ((key == KEY_BACKSPACE && buffer->cursorPos.x > 0) || (key == KEY_DELETE && buffer->cursorPos.x < buffer->length))
     {
         if (key == KEY_BACKSPACE)
@@ -131,7 +132,6 @@ void RemoveChar(TextBuffer *buffer, int key)
             buffer->cursorPos.y--;
         }
         TextBufferController();
-        StoreCurrentBufferState();
     }
 }
 
@@ -180,28 +180,6 @@ void UpdateSidebarWidth(void)
     sidebarWidth = numberSize.x + SIDEBAR_MARGIN;
 }
 
-void StorePreviousBufferState(void)
-{
-    FreePreviousBufferState();
-
-    prevBufferState.length = textBuffer.length;
-    prevBufferState.cursorX = (int)textBuffer.cursorPos.x;
-    prevBufferState.cursorY = (int)textBuffer.cursorPos.y;
-    prevBufferState.text = (char *)malloc(textBuffer.length + 1);
-    if (prevBufferState.text) strcpy(prevBufferState.text, textBuffer.text);
-}
-
-void StoreCurrentBufferState(void)
-{
-    FreeCurrentBufferState();
-
-    currentBufferState.length = textBuffer.length;
-    currentBufferState.cursorX = (int)textBuffer.cursorPos.x;
-    currentBufferState.cursorY = (int)textBuffer.cursorPos.y;
-    currentBufferState.text = (char *)malloc(textBuffer.length + 1);
-    if (currentBufferState.text) strcpy(currentBufferState.text, textBuffer.text);
-}
-
 /* KEY CONTROLLER */
 bool KeyController(void)
 {
@@ -232,12 +210,14 @@ bool KeyController(void)
         }
     }
 
-    if (IsKeyDown(KEY_UP)) ProcessKeyDownMovement(KEY_UP, shift);
-    if (IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, shift);
-    if (IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, shift);
-    if (IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, shift);
-    if (IsKeyDown(KEY_BACKSPACE)) ProcessKeyDownMovement(KEY_BACKSPACE, shift);
-    if (IsKeyDown(KEY_DELETE)) ProcessKeyDownMovement(KEY_DELETE, shift);
+    if (IsKeyDown(KEY_UP)) ProcessKeyDownMovement(KEY_UP, ctrl, shift);
+    if (IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, ctrl, shift);
+    if (IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, ctrl, shift);
+    if (IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, ctrl, shift);
+    if (IsKeyDown(KEY_BACKSPACE)) ProcessKeyDownMovement(KEY_BACKSPACE, ctrl, shift);
+    if (IsKeyDown(KEY_DELETE)) ProcessKeyDownMovement(KEY_DELETE, ctrl, shift);
+    if (IsKeyDown(KEY_Z)) ProcessKeyDownMovement(KEY_Z, ctrl, shift);
+    if (IsKeyDown(KEY_R)) ProcessKeyDownMovement(KEY_R, ctrl, shift);
     if (IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
     return isAnyKeyPressed;
 }
@@ -255,10 +235,9 @@ void ProcessKey(int key, bool ctrl, bool shift)
         case KEY_BACKSPACE:
             if (textBuffer.hasSelection && textBuffer.hasAllSelected)
             {
-                StorePreviousBufferState();
+                StoreUndo();
                 FreeTextBuffer();
                 InitializeTextBuffer();
-                StoreCurrentBufferState();
             }
             else
             {
@@ -270,10 +249,9 @@ void ProcessKey(int key, bool ctrl, bool shift)
         case KEY_DELETE:
             if (textBuffer.hasSelection && textBuffer.hasAllSelected)
             {
-                StorePreviousBufferState();
+                StoreUndo();
                 FreeTextBuffer();
                 InitializeTextBuffer();
-                StoreCurrentBufferState();
             }
             else
             {
@@ -359,7 +337,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
 
                 if (copiedText != NULL)
                 {
-                    StorePreviousBufferState();
+                    StoreUndo();
                     int copiedLength = strlen(copiedText);
                     if (textBuffer.length + copiedLength >= textBuffer.capacity)
                     {
@@ -381,7 +359,6 @@ void ProcessKey(int key, bool ctrl, bool shift)
                         }
                     }
                     if (!textBuffer.renderSelection) textBuffer.renderSelection = false;
-                    StoreCurrentBufferState();
                 }
             }
             break;
@@ -410,43 +387,11 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_Z:
-            if (ctrl && prevBufferState.text != NULL)
-            {
-                free(textBuffer.text);
-                textBuffer.text = NULL;
-                textBuffer.text = (char *)malloc(prevBufferState.length + 1);
-
-                if (textBuffer.text)
-                {
-                    strcpy(textBuffer.text, prevBufferState.text);
-                    textBuffer.length = prevBufferState.length;
-                    textBuffer.cursorPos.x = prevBufferState.cursorX;
-                    textBuffer.cursorPos.y = prevBufferState.cursorY;
-                    textBuffer.capacity = prevBufferState.length + 1;
-                    textBuffer.text[prevBufferState.length] = '\0';
-                    TextBufferController();
-                }
-            }
+            if (ctrl) Undo();
             break;
 
         case KEY_R:
-            if (ctrl && currentBufferState.text != NULL)
-            {
-                free(textBuffer.text);
-                textBuffer.text = NULL;
-                textBuffer.text = (char *)malloc(currentBufferState.length + 1);
-
-                if (textBuffer.text)
-                {
-                    strcpy(textBuffer.text, currentBufferState.text);
-                    textBuffer.length = currentBufferState.length;
-                    textBuffer.cursorPos.x = currentBufferState.cursorX;
-                    textBuffer.cursorPos.y = currentBufferState.cursorY;
-                    textBuffer.capacity = currentBufferState.length + 1;
-                    textBuffer.text[currentBufferState.length] = '\0';
-                    TextBufferController();
-                }
-            }
+            if (ctrl) Redo();
             break;
 
         case KEY_TAB:
@@ -462,7 +407,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
     }
 }
 
-void ProcessKeyDownMovement(int key, bool shift)
+void ProcessKeyDownMovement(int key, bool ctrl, bool shift)
 {
     float frameTime = GetFrameTime();
     keyDownDelay += frameTime;
@@ -471,13 +416,27 @@ void ProcessKeyDownMovement(int key, bool shift)
     {
         if (keyDownElapsedTime >= KEY_DOWN_INTERVAL)
         {
-            if (key == KEY_BACKSPACE || key == KEY_DELETE)
+            switch (key)
             {
-                RemoveChar(&textBuffer, key);
-            }
-            else
-            {
-                if (shift) CalculateSelection(key); else CalculateCursorPosition(key);
+                case KEY_BACKSPACE:
+                    RemoveChar(&textBuffer, key);
+                    break;
+
+                case KEY_DELETE:
+                    RemoveChar(&textBuffer, key);
+                    break;
+
+                case KEY_Z:
+                    if (ctrl) Undo();
+                    break;
+
+                case KEY_R:
+                    if (ctrl) Redo();
+                    break;
+
+                default:
+                    if (shift) CalculateSelection(key); else CalculateCursorPosition(key);
+                    break;
             }
             keyDownElapsedTime = 0.0f;
         }
@@ -960,6 +919,61 @@ void SaveFile(void)
     printf("File saved to %s\n", filePath);
 }
 
+/* BUFFER SNAPSHOT */
+void StoreUndo(void)
+{
+    SaveSnapshot(undoStack, &undoTop);
+    for (int i = 0; i <= redoTop; i++)
+    {
+        FreeSnapshot(&redoStack[i]);
+    }
+    redoTop = -1;
+}
+
+void SaveSnapshot(BufferSnapshot *snap, int *top)
+{
+    if (*top == HISTORY_LIMIT - 1)
+    {
+        FreeSnapshot(&snap[0]);
+        memmove(&snap[0], &snap[1], sizeof(BufferSnapshot) * (HISTORY_LIMIT - 1));
+        *top = *top - 1;
+    }
+
+    *top = *top + 1;
+    BufferSnapshot *snapshot = &snap[*top];
+    snapshot->length = textBuffer.length;
+    snapshot->cursorX = (int)textBuffer.cursorPos.x;
+    snapshot->cursorY = (int)textBuffer.cursorPos.y;
+    snapshot->text = malloc(textBuffer.length + 1);
+    strcpy(snapshot->text, textBuffer.text);
+}
+
+void ApplySnapshot(BufferSnapshot *snap)
+{
+    free(textBuffer.text);
+    textBuffer.text = malloc(snap->length + 1);
+    strcpy(textBuffer.text, snap->text);
+    textBuffer.length = snap->length;
+    textBuffer.capacity = snap->length + 1;
+    textBuffer.cursorPos.x = snap->cursorX;
+    textBuffer.cursorPos.y = snap->cursorY;
+    TextBufferController();
+}
+
+void Undo(void)
+{
+    if (undoTop < 0) return;
+    SaveSnapshot(redoStack, &redoTop);
+    ApplySnapshot(&undoStack[undoTop--]);
+}
+
+void Redo(void)
+{
+    if (redoTop < 0) return;
+    SaveSnapshot(undoStack, &undoTop);
+    ApplySnapshot(&redoStack[redoTop--]);
+}
+
 /* MEMORY DEALLOCATION */
 void FreeTextBuffer(void)
 {
@@ -974,28 +988,29 @@ void FreeLineBuffer(void)
     lineBufferCapacity = 0;
 }
 
-void FreePreviousBufferState(void)
+void FreeSnapshot(BufferSnapshot *snap)
 {
-    if (prevBufferState.text != NULL)
-    {
-        free(prevBufferState.text);
-        prevBufferState.text = NULL;
-    }
+    if (snap->text) free(snap->text);
+    snap->text = NULL;
 }
 
-void FreeCurrentBufferState(void)
+void FreeHistoryStacks(void)
 {
-    if (currentBufferState.text != NULL)
+    for (int i = 0; i <= undoTop; i++)
     {
-        free(currentBufferState.text);
-        currentBufferState.text = NULL;
+        FreeSnapshot(&undoStack[i]);
     }
+    for (int i = 0; i <= redoTop; i++)
+    {
+        FreeSnapshot(&redoStack[i]);
+    }
+    undoTop = -1;
+    redoTop = -1;
 }
 
 void FreeBufferMemory(void)
 {
     FreeTextBuffer();
     FreeLineBuffer();
-    FreePreviousBufferState();
-    FreeCurrentBufferState();
+    FreeHistoryStacks();
 }

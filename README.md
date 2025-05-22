@@ -14,10 +14,9 @@ A minimal text editor built from scratch using C and Raylib.
 - Line number navigation
 - Save with custom file path
 - System clipboard access
-- One level undo/redo support (no history stack)
+- Undo/Redo support
 
 ### Planned features
 - Text search
-- Undo/Redo stack
 
 ![ceditor screenshot](assets/images/ceditor.png)
