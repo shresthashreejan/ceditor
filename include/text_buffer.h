@@ -48,7 +48,7 @@ void UpdateView(void);
 void LoadFile(void);
 void SaveFile(void);
 void ProcessKey(int key, bool ctrl, bool shift);
-void ProcessKeyDownMovement(int key, bool ctrl, bool shift);
+void ProcessKeyDown(int key, bool ctrl, bool shift);
 void RenderTextBuffer(void);
 void UpdateSidebarWidth(void);
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY);

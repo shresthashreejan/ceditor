@@ -210,14 +210,14 @@ bool KeyController(void)
         }
     }
 
-    if (IsKeyDown(KEY_UP)) ProcessKeyDownMovement(KEY_UP, ctrl, shift);
-    if (IsKeyDown(KEY_DOWN)) ProcessKeyDownMovement(KEY_DOWN, ctrl, shift);
-    if (IsKeyDown(KEY_LEFT)) ProcessKeyDownMovement(KEY_LEFT, ctrl, shift);
-    if (IsKeyDown(KEY_RIGHT)) ProcessKeyDownMovement(KEY_RIGHT, ctrl, shift);
-    if (IsKeyDown(KEY_BACKSPACE)) ProcessKeyDownMovement(KEY_BACKSPACE, ctrl, shift);
-    if (IsKeyDown(KEY_DELETE)) ProcessKeyDownMovement(KEY_DELETE, ctrl, shift);
-    if (IsKeyDown(KEY_Z)) ProcessKeyDownMovement(KEY_Z, ctrl, shift);
-    if (IsKeyDown(KEY_R)) ProcessKeyDownMovement(KEY_R, ctrl, shift);
+    if (IsKeyDown(KEY_UP)) ProcessKeyDown(KEY_UP, ctrl, shift);
+    if (IsKeyDown(KEY_DOWN)) ProcessKeyDown(KEY_DOWN, ctrl, shift);
+    if (IsKeyDown(KEY_LEFT)) ProcessKeyDown(KEY_LEFT, ctrl, shift);
+    if (IsKeyDown(KEY_RIGHT)) ProcessKeyDown(KEY_RIGHT, ctrl, shift);
+    if (IsKeyDown(KEY_BACKSPACE)) ProcessKeyDown(KEY_BACKSPACE, ctrl, shift);
+    if (IsKeyDown(KEY_DELETE)) ProcessKeyDown(KEY_DELETE, ctrl, shift);
+    if (IsKeyDown(KEY_Z)) ProcessKeyDown(KEY_Z, ctrl, shift);
+    if (IsKeyDown(KEY_R)) ProcessKeyDown(KEY_R, ctrl, shift);
     if (IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
     return isAnyKeyPressed;
 }
@@ -407,7 +407,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
     }
 }
 
-void ProcessKeyDownMovement(int key, bool ctrl, bool shift)
+void ProcessKeyDown(int key, bool ctrl, bool shift)
 {
     float frameTime = GetFrameTime();
     keyDownDelay += frameTime;

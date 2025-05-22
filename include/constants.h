@@ -19,6 +19,6 @@
 #define INPUT_BOX_WIDTH 200
 #define INPUT_BOX_HEIGHT 20
 #define DRAW_TEXT_SPACING 1.0f
-#define HISTORY_LIMIT 50
+#define HISTORY_LIMIT 20
 
 #endif
