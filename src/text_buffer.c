@@ -20,6 +20,7 @@ const char *filePath = NULL;
 char *copiedText = NULL;
 char lineNumberInput[32];
 char saveFileInput[256];
+char searchInput[256];
 int lineBufferCapacity = 0;
 int sidebarWidth = SIDEBAR_WIDTH;
 int nonPrintableKeys[] = {
@@ -38,7 +39,8 @@ int nonPrintableKeys[] = {
     KEY_Z,
     KEY_R,
     KEY_TAB,
-    KEY_DELETE
+    KEY_DELETE,
+    KEY_F
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 int undoTop = -1;
@@ -52,6 +54,7 @@ double lastBlinkTime;
 bool cursorIdle = true;
 bool showLineNumberInput = false;
 bool showSaveFileInput = false;
+bool showSearchInput = false;
 bool hasFile = false;
 Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
@@ -59,6 +62,7 @@ Rectangle totalView = {0};
 Rectangle panelView = {0};
 Rectangle lineNumberInputBox = {0};
 Rectangle saveFileInputBox = {0};
+Rectangle searchInputBox = {0};
 
 /* SETUP */
 void SetupTextBuffer(void)
@@ -183,7 +187,7 @@ void UpdateSidebarWidth(void)
 /* KEY CONTROLLER */
 bool KeyController(void)
 {
-    if (showLineNumberInput || showSaveFileInput) return false;
+    if (showLineNumberInput || showSaveFileInput || showSearchInput) return false;
 
     int key = GetCharPressed();
     bool isAnyKeyPressed = false;
@@ -386,6 +390,10 @@ void ProcessKey(int key, bool ctrl, bool shift)
             if (ctrl) showLineNumberInput = true;
             break;
 
+        case KEY_F:
+            if (ctrl) showSearchInput = true;
+            break;
+
         case KEY_Z:
             if (ctrl) Undo();
             break;
@@ -467,6 +475,7 @@ void RenderTextBuffer(void)
     DrawSelectionIndicator();
     DrawLineNumberNavInput();
     DrawSaveFileInput();
+    DrawSearchInput();
 }
 
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
@@ -569,11 +578,31 @@ void DrawSaveFileInput(void)
                 SaveFile();
                 showSaveFileInput = false;
             }
+        }
 
-            if (IsKeyPressed(KEY_ESCAPE))
-            {
-                showSaveFileInput = false;
-            }
+        if (IsKeyPressed(KEY_ESCAPE))
+        {
+            showSaveFileInput = false;
+        }
+    }
+}
+
+void DrawSearchInput(void)
+{
+    if (showSearchInput)
+    {
+        searchInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
+        GuiTextBox(searchInputBox, searchInput, 32, showSearchInput);
+        DrawOperationHelpText(KEY_F);
+
+        if (IsKeyPressed(KEY_ENTER))
+        {
+            printf("%s\n", searchInput);
+        }
+
+        if (IsKeyPressed(KEY_ESCAPE))
+        {
+            showSearchInput = false;
         }
     }
 }

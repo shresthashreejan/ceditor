@@ -19,7 +19,7 @@ void ScreenController(void)
 
 void RenderFrameRate(void)
 {
-    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_F))
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_F))
     {
         showFps = !showFps;
     }
@@ -51,17 +51,20 @@ void DrawOperationHelpText(int key)
     {
         case KEY_G:
             sprintf(helpText, "Enter line number.");
-            RenderHelpText(helpText);
             break;
 
         case KEY_S:
             sprintf(helpText, "Enter file path to save.");
-            RenderHelpText(helpText);
+            break;
+
+        case KEY_F:
+            sprintf(helpText, "Enter search string.");
             break;
 
         default:
             break;
     }
+    RenderHelpText(helpText);
 }
 
 void RenderHelpText(char helpText[256])
