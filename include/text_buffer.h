@@ -32,6 +32,12 @@ typedef struct {
     int cursorY;
 } BufferSnapshot;
 
+typedef struct {
+    int start;
+    int end;
+    bool hasStringMatch;
+} SearchIndex;
+
 void SetupTextBuffer(void);
 void InitializeTextBuffer(void);
 void InitializeLineBuffer(void);
@@ -58,6 +64,7 @@ void RecordCursorActivity(void);
 void UpdateCursorState(void);
 void DrawSelectionIndicator(void);
 void ClearSelectionIndicator(void);
+void DrawSearchIndicator(void);
 void NavigateToLineNumber(int lineNumber);
 void DrawLineNumberNavInput(void);
 void DrawSaveFileInput(void);

@@ -16,6 +16,7 @@ TextBuffer textBuffer;
 LineBuffer *lineBuffer = NULL;
 BufferSnapshot undoStack[HISTORY_LIMIT];
 BufferSnapshot redoStack[HISTORY_LIMIT];
+SearchIndex searchIndex;
 const char *filePath = NULL;
 char *copiedText = NULL;
 char lineNumberInput[32];
@@ -473,6 +474,7 @@ void RenderTextBuffer(void)
     DrawCursor(lineHeight);
     DrawBottomBar();
     DrawSelectionIndicator();
+    DrawSearchIndicator();
     DrawLineNumberNavInput();
     DrawSaveFileInput();
     DrawSearchInput();
@@ -589,15 +591,45 @@ void DrawSaveFileInput(void)
 
 void DrawSearchInput(void)
 {
+    static char prevSearchInput[256] = "";
     if (showSearchInput)
     {
         searchInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(searchInputBox, searchInput, 32, showSearchInput);
         DrawOperationHelpText(KEY_F);
 
-        if (IsKeyPressed(KEY_ENTER))
+        if (searchInput[0] != '\0')
         {
-            printf("%s\n", searchInput);
+            size_t searchStringLen = strlen(searchInput);
+            if (IsKeyPressed(KEY_ENTER))
+            {
+                char *searchStartPtr = textBuffer.text;
+
+                if (strcmp(prevSearchInput, searchInput) != 0)
+                {
+                    strcpy(prevSearchInput, searchInput);
+                    searchIndex.hasStringMatch = false;
+                }
+                else if (searchIndex.hasStringMatch)
+                {
+                    searchStartPtr = textBuffer.text + searchIndex.end;
+                }
+
+                char *match = strstr(searchStartPtr, searchInput);
+                if (match != NULL)
+                {
+                    searchIndex.hasStringMatch = true;
+                    searchIndex.start = (int)(match - textBuffer.text);
+                    searchIndex.end = searchIndex.start + searchStringLen;
+                    // TODO: Draw match position in help text
+                    printf("Match found at position: %d\n", (int)(match - textBuffer.text));
+                }
+                else
+                {
+                    // TODO: Draw help text
+                    printf("No match found.");
+                }
+            }
         }
 
         if (IsKeyPressed(KEY_ESCAPE))
@@ -852,6 +884,7 @@ void DrawSelectionIndicator(void)
         selEnd = tmp;
     }
 
+    // TODO: Refactor this block
     for (int i = 0; i < textBuffer.lineCount; i++)
     {
         int lineStart = lineBuffer[i].lineStart;
@@ -878,7 +911,7 @@ void DrawSelectionIndicator(void)
 
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, WHITE);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, GRAY);
         EndBlendMode();
     }
 }
@@ -887,6 +920,43 @@ void ClearSelectionIndicator(void)
 {
     if (textBuffer.renderSelection) textBuffer.renderSelection = false;
     if (textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
+}
+
+void DrawSearchIndicator(void)
+{
+    if (searchIndex.hasStringMatch)
+    {
+        // TODO: Refactor this block
+        for (int i = 0; i < textBuffer.lineCount; i++)
+        {
+            int lineStart = lineBuffer[i].lineStart;
+            int lineEnd = lineBuffer[i].lineEnd;
+
+            int start = (searchIndex.start > lineStart) ? searchIndex.start : lineStart;
+            int end = (searchIndex.end < lineEnd) ? searchIndex.end : lineEnd;
+            if (end <= start) continue;
+
+            int prefixLen = start - lineStart;
+            char prefix[1024];
+            strncpy(prefix, &textBuffer.text[lineStart], prefixLen);
+            prefix[prefixLen] = '\0';
+            Vector2 prefixSize = MeasureTextEx(font, prefix, FONT_SIZE, TEXT_MARGIN);
+
+            int selectionLen = end - start;
+            char selectionText[1024];
+            strncpy(selectionText, &textBuffer.text[start], selectionLen);
+            selectionText[selectionLen] = '\0';
+            Vector2 selectionSize = MeasureTextEx(font, selectionText, FONT_SIZE, TEXT_MARGIN);
+
+            int rectX = sidebarWidth + TEXT_MARGIN + (int)scroll.x + (int)prefixSize.x;
+            int rectY = TEXT_MARGIN + (int)(i * lineHeight) + (int)scroll.y;
+
+            BeginBlendMode(BLEND_CUSTOM);
+                rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
+                DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, GREEN);
+            EndBlendMode();
+        }
+    }
 }
 
 /* FILE HANDLING */
