@@ -545,7 +545,8 @@ void DrawLineNumberNavInput(void)
     {
         lineNumberInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(lineNumberInputBox, lineNumberInput, 32, showLineNumberInput);
-        DrawOperationHelpText(KEY_G);
+        char helpText[256] = "Enter line number.";
+        RenderHelpText(helpText);
         if (IsKeyPressed(KEY_ENTER))
         {
             int line = atoi(lineNumberInput);
@@ -568,7 +569,8 @@ void DrawSaveFileInput(void)
     {
         saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH * 2)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT * 2)) / 2, INPUT_BOX_WIDTH * 2, INPUT_BOX_HEIGHT * 2};
         GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
-        DrawOperationHelpText(KEY_S);
+        char helpText[256] = "Enter file path to save.";
+        RenderHelpText(helpText);
 
         if (saveFileInput[0] != '\0')
         {
@@ -596,7 +598,8 @@ void DrawSearchInput(void)
     {
         searchInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(searchInputBox, searchInput, 32, showSearchInput);
-        DrawOperationHelpText(KEY_F);
+        char helpText[256] = "Enter search string.";
+        RenderHelpText(helpText);
 
         if (searchInput[0] != '\0')
         {
@@ -635,6 +638,7 @@ void DrawSearchInput(void)
         if (IsKeyPressed(KEY_ESCAPE))
         {
             showSearchInput = false;
+            searchIndex.hasStringMatch = false;
         }
     }
 }

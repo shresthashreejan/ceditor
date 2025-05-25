@@ -44,29 +44,6 @@ void DrawBottomBar(void)
     DrawRectangle(0, GetScreenHeight() - BOTTOM_BAR_HEIGHT, GetScreenWidth(), BOTTOM_BAR_HEIGHT, BOTTOM_BAR_COLOR);
 }
 
-void DrawOperationHelpText(int key)
-{
-    char helpText[256];
-    switch (key)
-    {
-        case KEY_G:
-            sprintf(helpText, "Enter line number.");
-            break;
-
-        case KEY_S:
-            sprintf(helpText, "Enter file path to save.");
-            break;
-
-        case KEY_F:
-            sprintf(helpText, "Enter search string.");
-            break;
-
-        default:
-            break;
-    }
-    RenderHelpText(helpText);
-}
-
 void RenderHelpText(char helpText[256])
 {
     Vector2 position = {0, GetScreenHeight() - BOTTOM_BAR_FONT_SIZE};
