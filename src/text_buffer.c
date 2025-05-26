@@ -945,7 +945,7 @@ void DrawSelectionIndicator(void)
 
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, GRAY);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, LIGHTBLUE);
         EndBlendMode();
     }
 }

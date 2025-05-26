@@ -15,8 +15,6 @@ A minimal text editor built from scratch using C and Raylib.
 - Save with custom file path
 - System clipboard access
 - Undo/Redo support
-
-### Planned features
 - Text search
 
 ![ceditor screenshot](assets/images/ceditor.png)

@@ -20,5 +20,6 @@
 #define INPUT_BOX_HEIGHT 20
 #define DRAW_TEXT_SPACING 1.0f
 #define HISTORY_LIMIT 20
+#define LIGHTBLUE (Color){32, 164, 243, 255}
 
 #endif
