@@ -616,6 +616,7 @@ void DrawSearchInput(void)
     }
 }
 
+/* TEXT SEARCH */
 void SearchText(char prevSearchInput[256], char searchInput[256])
 {
     if (searchInput[0] != '\0')
@@ -642,17 +643,10 @@ void SearchText(char prevSearchInput[256], char searchInput[256])
                 searchIndex.start = (int)(match - textBuffer.text);
                 searchIndex.end = searchIndex.start + searchStringLen;
                 showSearchHelpText = false;
-                for (int i = 0; i < textBuffer.lineCount; i++)
-                {
-                    if (searchIndex.start >= lineBuffer[i].lineStart && searchIndex.start <= lineBuffer[i].lineEnd)
-                    {
-                        textBuffer.cursorPos.x = searchIndex.start;
-                        textBuffer.cursorPos.y = lineBuffer[i].lineCount;
-                        matchPosition = lineBuffer[i].lineCount + 1;
-                        UpdateView();
-                    }
-                }
+                CalculateCursorPosBasedOnPosX(searchIndex.start);
+                matchPosition = textBuffer.cursorPos.y + 1;
                 searchIterationCount++;
+                UpdateView();
             }
             else
             {
@@ -789,6 +783,18 @@ int CalculateCursorPosX(int previousY)
     int newLineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
     int newXPos = newLineStart + offset;
     return (newXPos > newLineEnd) ? newLineEnd : newXPos;
+}
+
+void CalculateCursorPosBasedOnPosX(int cursorX)
+{
+    for (int i = 0; i < textBuffer.lineCount; i++)
+    {
+        if (cursorX >= lineBuffer[i].lineStart && cursorX <= lineBuffer[i].lineEnd)
+        {
+            textBuffer.cursorPos.x = cursorX;
+            textBuffer.cursorPos.y = lineBuffer[i].lineCount;
+        }
+    }
 }
 
 void NavigateToLineNumber(int lineNumber)
