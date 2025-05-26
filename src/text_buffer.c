@@ -47,6 +47,7 @@ int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[
 int undoTop = -1;
 int redoTop = -1;
 int matchPosition;
+int searchIterationCount = 0;
 float keyDownElapsedTime = 0.0f;
 float keyDownDelay = 0.0f;
 float maxLineWidth = 0;
@@ -59,7 +60,6 @@ bool showSaveFileInput = false;
 bool showSearchInput = false;
 bool hasFile = false;
 bool showSearchHelpText = false;
-bool showNoMatchHelpText = false;
 Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
 Rectangle totalView = {0};
@@ -608,60 +608,68 @@ void DrawSearchInput(void)
 
         char searchHelpText[256] = "Enter search string.";
         char matchHelpText[256];
-        sprintf(matchHelpText, "Match found at line %d", matchPosition);
-        char noMatchHelpText[256] = "No match found.";
+        sprintf(matchHelpText, "Match found at line %d.", matchPosition);
 
         if (showSearchHelpText) DrawHelpText(searchHelpText);
-        if (!showSearchHelpText && !showNoMatchHelpText) DrawHelpText(matchHelpText);
-        if (!showSearchHelpText && showNoMatchHelpText) DrawHelpText(noMatchHelpText);
+        if (!showSearchHelpText) DrawHelpText(matchHelpText);
+        SearchText(prevSearchInput, searchInput);
+    }
+}
 
-        if (searchInput[0] != '\0')
+void SearchText(char prevSearchInput[256], char searchInput[256])
+{
+    if (searchInput[0] != '\0')
+    {
+        size_t searchStringLen = strlen(searchInput);
+        if (IsKeyPressed(KEY_ENTER))
         {
-            size_t searchStringLen = strlen(searchInput);
-            if (IsKeyPressed(KEY_ENTER))
+            char *searchStartPtr = textBuffer.text;
+
+            if (strcmp(prevSearchInput, searchInput) != 0)
             {
-                char *searchStartPtr = textBuffer.text;
+                strcpy(prevSearchInput, searchInput);
+                searchIndex.hasStringMatch = false;
+            }
+            else if (searchIndex.hasStringMatch)
+            {
+                searchStartPtr = textBuffer.text + searchIndex.end;
+            }
 
-                if (strcmp(prevSearchInput, searchInput) != 0)
+            char *match = strstr(searchStartPtr, searchInput);
+            if (match != NULL)
+            {
+                searchIndex.hasStringMatch = true;
+                searchIndex.start = (int)(match - textBuffer.text);
+                searchIndex.end = searchIndex.start + searchStringLen;
+                showSearchHelpText = false;
+                for (int i = 0; i < textBuffer.lineCount; i++)
                 {
-                    strcpy(prevSearchInput, searchInput);
-                    searchIndex.hasStringMatch = false;
-                }
-                else if (searchIndex.hasStringMatch)
-                {
-                    searchStartPtr = textBuffer.text + searchIndex.end;
-                }
-
-                char *match = strstr(searchStartPtr, searchInput);
-                if (match != NULL)
-                {
-                    searchIndex.hasStringMatch = true;
-                    searchIndex.start = (int)(match - textBuffer.text);
-                    searchIndex.end = searchIndex.start + searchStringLen;
-                    showSearchHelpText = false;
-                    for (int i = 0; i < textBuffer.lineCount; i++)
+                    if (searchIndex.start >= lineBuffer[i].lineStart && searchIndex.start <= lineBuffer[i].lineEnd)
                     {
-                        if (searchIndex.start >= lineBuffer[i].lineStart && searchIndex.start <= lineBuffer[i].lineEnd)
-                        {
-                            textBuffer.cursorPos.x = searchIndex.start;
-                            textBuffer.cursorPos.y = lineBuffer[i].lineCount;
-                            matchPosition = lineBuffer[i].lineCount + 1;
-                            UpdateView();
-                        }
+                        textBuffer.cursorPos.x = searchIndex.start;
+                        textBuffer.cursorPos.y = lineBuffer[i].lineCount;
+                        matchPosition = lineBuffer[i].lineCount + 1;
+                        UpdateView();
                     }
                 }
-                else
+                searchIterationCount++;
+            }
+            else
+            {
+                if (searchIterationCount > 0)
                 {
-                    showNoMatchHelpText = true;
+                    searchIndex.hasStringMatch = false;
+                    searchStartPtr = textBuffer.text;
+                    SearchText(prevSearchInput, searchInput);
                 }
             }
         }
+    }
 
-        if (IsKeyPressed(KEY_ESCAPE))
-        {
-            showSearchInput = false;
-            searchIndex.hasStringMatch = false;
-        }
+    if (IsKeyPressed(KEY_ESCAPE))
+    {
+        showSearchInput = false;
+        searchIndex.hasStringMatch = false;
     }
 }
 

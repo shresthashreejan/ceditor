@@ -77,6 +77,7 @@ void Undo(void);
 void Redo(void);
 void FreeSnapshot(BufferSnapshot *snap);
 void FreeHistoryStacks(void);
+void SearchText(char prevSearchInput[256], char searchInput[256]);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
 
