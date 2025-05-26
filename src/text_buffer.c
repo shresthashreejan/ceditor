@@ -46,6 +46,7 @@ int nonPrintableKeys[] = {
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 int undoTop = -1;
 int redoTop = -1;
+int matchPosition;
 float keyDownElapsedTime = 0.0f;
 float keyDownDelay = 0.0f;
 float maxLineWidth = 0;
@@ -57,6 +58,8 @@ bool showLineNumberInput = false;
 bool showSaveFileInput = false;
 bool showSearchInput = false;
 bool hasFile = false;
+bool showSearchHelpText = false;
+bool showNoMatchHelpText = false;
 Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
 Rectangle totalView = {0};
@@ -392,7 +395,11 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_F:
-            if (ctrl) showSearchInput = true;
+            if (ctrl)
+            {
+                showSearchInput = true;
+                showSearchHelpText = true;
+            }
             break;
 
         case KEY_Z:
@@ -546,7 +553,7 @@ void DrawLineNumberNavInput(void)
         lineNumberInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(lineNumberInputBox, lineNumberInput, 32, showLineNumberInput);
         char helpText[256] = "Enter line number.";
-        RenderHelpText(helpText);
+        DrawHelpText(helpText);
         if (IsKeyPressed(KEY_ENTER))
         {
             int line = atoi(lineNumberInput);
@@ -570,7 +577,7 @@ void DrawSaveFileInput(void)
         saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH * 2)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT * 2)) / 2, INPUT_BOX_WIDTH * 2, INPUT_BOX_HEIGHT * 2};
         GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
         char helpText[256] = "Enter file path to save.";
-        RenderHelpText(helpText);
+        DrawHelpText(helpText);
 
         if (saveFileInput[0] != '\0')
         {
@@ -598,8 +605,15 @@ void DrawSearchInput(void)
     {
         searchInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(searchInputBox, searchInput, 32, showSearchInput);
-        char helpText[256] = "Enter search string.";
-        RenderHelpText(helpText);
+
+        char searchHelpText[256] = "Enter search string.";
+        char matchHelpText[256];
+        sprintf(matchHelpText, "Match found at line %d", matchPosition);
+        char noMatchHelpText[256] = "No match found.";
+
+        if (showSearchHelpText) DrawHelpText(searchHelpText);
+        if (!showSearchHelpText && !showNoMatchHelpText) DrawHelpText(matchHelpText);
+        if (!showSearchHelpText && showNoMatchHelpText) DrawHelpText(noMatchHelpText);
 
         if (searchInput[0] != '\0')
         {
@@ -624,13 +638,21 @@ void DrawSearchInput(void)
                     searchIndex.hasStringMatch = true;
                     searchIndex.start = (int)(match - textBuffer.text);
                     searchIndex.end = searchIndex.start + searchStringLen;
-                    // TODO: Draw match position in help text
-                    printf("Match found at position: %d\n", (int)(match - textBuffer.text));
+                    showSearchHelpText = false;
+                    for (int i = 0; i < textBuffer.lineCount; i++)
+                    {
+                        if (searchIndex.start >= lineBuffer[i].lineStart && searchIndex.start <= lineBuffer[i].lineEnd)
+                        {
+                            textBuffer.cursorPos.x = searchIndex.start;
+                            textBuffer.cursorPos.y = lineBuffer[i].lineCount;
+                            matchPosition = lineBuffer[i].lineCount + 1;
+                            UpdateView();
+                        }
+                    }
                 }
                 else
                 {
-                    // TODO: Draw help text
-                    printf("No match found.");
+                    showNoMatchHelpText = true;
                 }
             }
         }

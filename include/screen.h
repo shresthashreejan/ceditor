@@ -6,6 +6,6 @@ void ScreenController(void);
 void RenderFrameRate(void);
 void DrawCustomFPS(void);
 void DrawBottomBar(void);
-void RenderHelpText(char helpText[256]);
+void DrawHelpText(char helpText[256]);
 
 #endif

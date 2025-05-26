@@ -44,7 +44,7 @@ void DrawBottomBar(void)
     DrawRectangle(0, GetScreenHeight() - BOTTOM_BAR_HEIGHT, GetScreenWidth(), BOTTOM_BAR_HEIGHT, BOTTOM_BAR_COLOR);
 }
 
-void RenderHelpText(char helpText[256])
+void DrawHelpText(char helpText[256])
 {
     Vector2 position = {0, GetScreenHeight() - BOTTOM_BAR_FONT_SIZE};
     DrawTextEx(font, helpText, position, BOTTOM_BAR_FONT_SIZE, DRAW_TEXT_SPACING, WHITE);
