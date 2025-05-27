@@ -64,6 +64,7 @@ void RecordCursorActivity(void);
 void UpdateCursorState(void);
 void DrawSelectionIndicator(void);
 void ClearSelectionIndicator(void);
+void DrawIndicatorOverlay(int startIndex, int endIndex, Color color);
 void DrawSearchIndicator(void);
 void NavigateToLineNumber(int lineNumber);
 void DrawLineNumberNavInput(void);

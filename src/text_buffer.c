@@ -923,15 +923,23 @@ void DrawSelectionIndicator(void)
         selStart = selEnd;
         selEnd = tmp;
     }
+    DrawIndicatorOverlay(selStart, selEnd, LIGHTBLUE);
+}
 
-    // TODO: Refactor this block
+void DrawSearchIndicator(void)
+{
+    if (searchIndex.hasStringMatch) DrawIndicatorOverlay(searchIndex.start, searchIndex.end, GREEN);
+}
+
+void DrawIndicatorOverlay(int startIndex, int endIndex, Color color)
+{
     for (int i = 0; i < textBuffer.lineCount; i++)
     {
         int lineStart = lineBuffer[i].lineStart;
         int lineEnd = lineBuffer[i].lineEnd;
 
-        int start = (selStart > lineStart) ? selStart : lineStart;
-        int end = (selEnd < lineEnd) ? selEnd : lineEnd;
+        int start = (startIndex > lineStart) ? startIndex : lineStart;
+        int end = (endIndex < lineEnd) ? endIndex : lineEnd;
         if (end <= start) continue;
 
         int prefixLen = start - lineStart;
@@ -951,7 +959,7 @@ void DrawSelectionIndicator(void)
 
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, LIGHTBLUE);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, color);
         EndBlendMode();
     }
 }
@@ -960,43 +968,6 @@ void ClearSelectionIndicator(void)
 {
     if (textBuffer.renderSelection) textBuffer.renderSelection = false;
     if (textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
-}
-
-void DrawSearchIndicator(void)
-{
-    if (searchIndex.hasStringMatch)
-    {
-        // TODO: Refactor this block
-        for (int i = 0; i < textBuffer.lineCount; i++)
-        {
-            int lineStart = lineBuffer[i].lineStart;
-            int lineEnd = lineBuffer[i].lineEnd;
-
-            int start = (searchIndex.start > lineStart) ? searchIndex.start : lineStart;
-            int end = (searchIndex.end < lineEnd) ? searchIndex.end : lineEnd;
-            if (end <= start) continue;
-
-            int prefixLen = start - lineStart;
-            char prefix[1024];
-            strncpy(prefix, &textBuffer.text[lineStart], prefixLen);
-            prefix[prefixLen] = '\0';
-            Vector2 prefixSize = MeasureTextEx(font, prefix, FONT_SIZE, TEXT_MARGIN);
-
-            int selectionLen = end - start;
-            char selectionText[1024];
-            strncpy(selectionText, &textBuffer.text[start], selectionLen);
-            selectionText[selectionLen] = '\0';
-            Vector2 selectionSize = MeasureTextEx(font, selectionText, FONT_SIZE, TEXT_MARGIN);
-
-            int rectX = sidebarWidth + TEXT_MARGIN + (int)scroll.x + (int)prefixSize.x;
-            int rectY = TEXT_MARGIN + (int)(i * lineHeight) + (int)scroll.y;
-
-            BeginBlendMode(BLEND_CUSTOM);
-                rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-                DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, GREEN);
-            EndBlendMode();
-        }
-    }
 }
 
 /* FILE HANDLING */
