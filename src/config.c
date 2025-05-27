@@ -11,7 +11,7 @@ Font font;
 
 void SetupConfiguration(void)
 {
-    SetTargetFPS(0);
+    SetTargetFPS(60);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, CEDITOR);
