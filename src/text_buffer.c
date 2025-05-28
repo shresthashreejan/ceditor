@@ -48,6 +48,7 @@ int undoTop = -1;
 int redoTop = -1;
 int matchPosition;
 int searchIterationCount = 0;
+int highestXOffset = 0;
 float keyDownElapsedTime = 0.0f;
 float keyDownDelay = 0.0f;
 float maxLineWidth = 0;
@@ -713,6 +714,7 @@ void CalculateCursorPosition(int key)
                     textBuffer.cursorPos.y--;
                 }
                 textBuffer.cursorPos.x--;
+                highestXOffset = 0;
             }
             break;
 
@@ -728,6 +730,7 @@ void CalculateCursorPosition(int key)
                 {
                     textBuffer.cursorPos.x++;
                 }
+                highestXOffset = 0;
             }
             break;
 
@@ -782,7 +785,23 @@ int CalculateCursorPosX(int previousY)
     int newLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
     int newLineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
     int newXPos = newLineStart + offset;
-    return (newXPos > newLineEnd) ? newLineEnd : newXPos;
+
+    if (newXPos > newLineEnd)
+    {
+        if (offset > highestXOffset)
+        {
+            highestXOffset = offset;
+        }
+        return newLineEnd;
+    }
+
+    if (highestXOffset)
+    {
+        int xPosition = newLineStart + highestXOffset;
+        return xPosition <= newLineEnd ? xPosition : newLineEnd;
+    }
+
+    return newXPos;
 }
 
 void CalculateCursorPosBasedOnPosX(int cursorX)
