@@ -978,6 +978,7 @@ void DrawIndicatorOverlay(int startIndex, int endIndex, Color color)
 
         BeginBlendMode(BLEND_CUSTOM);
             rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, RAYWHITE);
             DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, color);
         EndBlendMode();
     }
