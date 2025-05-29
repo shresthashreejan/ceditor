@@ -274,13 +274,27 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_UP:
-            CalculateCursorPosition(KEY_UP);
-            ClearSelectionIndicator();
+            if (shift)
+            {
+                CalculateSelection(KEY_UP);
+            }
+            else
+            {
+                CalculateCursorPosition(KEY_UP);
+                ClearSelectionIndicator();
+            }
             break;
 
         case KEY_DOWN:
-            CalculateCursorPosition(KEY_DOWN);
-            ClearSelectionIndicator();
+            if (shift)
+            {
+                CalculateSelection(KEY_DOWN);
+            }
+            else
+            {
+                CalculateCursorPosition(KEY_DOWN);
+                ClearSelectionIndicator();
+            }
             break;
 
         case KEY_LEFT:
@@ -905,6 +919,56 @@ void CalculateSelection(int key)
                 else
                 {
                     textBuffer.cursorPos.x++;
+                }
+                textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+                textBuffer.hasAllSelected = false;
+                textBuffer.renderSelection = true;
+            }
+            break;
+
+        case KEY_UP:
+            if (textBuffer.cursorPos.y > 0)
+            {
+                if (!textBuffer.hasSelectionStarted)
+                {
+                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                }
+                textBuffer.cursorPos.y--;
+                int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y + 1].lineStart;
+                if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd)
+                {
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                }
+                else
+                {
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
+                }
+                textBuffer.selectionStart = textBuffer.cursorPos.x;
+                textBuffer.hasSelection = true;
+                textBuffer.hasAllSelected = false;
+                textBuffer.renderSelection = true;
+            }
+            break;
+
+        case KEY_DOWN:
+            if (textBuffer.cursorPos.y < textBuffer.lineCount - 1)
+            {
+                if (!textBuffer.hasSelectionStarted)
+                {
+                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.selectionStart = textBuffer.cursorPos.x;
+                }
+                textBuffer.cursorPos.y++;
+                int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y - 1].lineStart;
+                if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd || textBuffer.cursorPos.y == textBuffer.lineCount - 1)
+                {
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                }
+                else
+                {
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
                 }
                 textBuffer.selectionEnd = textBuffer.cursorPos.x;
                 textBuffer.hasSelection = true;
