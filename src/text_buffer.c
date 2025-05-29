@@ -44,6 +44,17 @@ int nonPrintableKeys[] = {
     KEY_F
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
+int keyDownKeys[] = {
+    KEY_UP,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_BACKSPACE,
+    KEY_DELETE,
+    KEY_Z,
+    KEY_R
+};
+int keyDownKeysLength = sizeof(keyDownKeys) / sizeof(keyDownKeys[0]);
 int undoTop = -1;
 int redoTop = -1;
 int matchPosition;
@@ -219,16 +230,24 @@ bool KeyController(void)
         }
     }
 
-    if (IsKeyDown(KEY_UP)) ProcessKeyDown(KEY_UP, ctrl, shift);
-    if (IsKeyDown(KEY_DOWN)) ProcessKeyDown(KEY_DOWN, ctrl, shift);
-    if (IsKeyDown(KEY_LEFT)) ProcessKeyDown(KEY_LEFT, ctrl, shift);
-    if (IsKeyDown(KEY_RIGHT)) ProcessKeyDown(KEY_RIGHT, ctrl, shift);
-    if (IsKeyDown(KEY_BACKSPACE)) ProcessKeyDown(KEY_BACKSPACE, ctrl, shift);
-    if (IsKeyDown(KEY_DELETE)) ProcessKeyDown(KEY_DELETE, ctrl, shift);
-    if (IsKeyDown(KEY_Z)) ProcessKeyDown(KEY_Z, ctrl, shift);
-    if (IsKeyDown(KEY_R)) ProcessKeyDown(KEY_R, ctrl, shift);
-    if (IsKeyReleased(KEY_LEFT) || IsKeyReleased(KEY_RIGHT) || IsKeyReleased(KEY_UP) || IsKeyReleased(KEY_DOWN)) keyDownDelay = 0.0f;
+    for (int i = 0; i < keyDownKeysLength; i++)
+    {
+        if (IsKeyDown(keyDownKeys[i]))
+        {
+            ProcessKeyDown(keyDownKeys[i], ctrl, shift);
+        }
+        if (keyDownDelay != 0.0f) ResetKeyDownDelay(keyDownKeys[i]);
+    }
+
     return isAnyKeyPressed;
+}
+
+void ResetKeyDownDelay(int key)
+{
+    if (IsKeyReleased(key))
+    {
+        keyDownDelay = 0.0f;
+    }
 }
 
 void ProcessKey(int key, bool ctrl, bool shift)
@@ -410,7 +429,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_F:
-            if (ctrl)
+            if (ctrl && !shift)
             {
                 showSearchInput = true;
                 showSearchHelpText = true;

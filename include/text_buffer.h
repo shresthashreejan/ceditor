@@ -80,6 +80,7 @@ void FreeSnapshot(BufferSnapshot *snap);
 void FreeHistoryStacks(void);
 void SearchText(char prevSearchInput[256], char searchInput[256]);
 void CalculateCursorPosBasedOnPosX(int cursorX);
+void ResetKeyDownDelay(int key);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
 
