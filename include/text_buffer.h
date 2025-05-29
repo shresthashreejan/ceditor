@@ -70,6 +70,7 @@ void NavigateToLineNumber(int lineNumber);
 void DrawLineNumberNavInput(void);
 void DrawSaveFileInput(void);
 void DrawSearchInput(void);
+void DrawSaveHelpText(void);
 void UpdateView(void);
 void StoreUndo(void);
 void SaveSnapshot(BufferSnapshot *snap, int *top);
