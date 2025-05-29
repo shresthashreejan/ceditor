@@ -92,9 +92,9 @@ void SetupTextBuffer(void)
 
 void InitializeTextBuffer(void)
 {
-    textBuffer.text = (char *)malloc(1024);
+    textBuffer.text = (char *)malloc(BUFFER_SIZE);
     textBuffer.length = 0;
-    textBuffer.capacity = 1024;
+    textBuffer.capacity = BUFFER_SIZE;
     textBuffer.cursorPos.x = 0;
     textBuffer.cursorPos.y = 0;
     textBuffer.cursorVisible = true;
@@ -110,7 +110,7 @@ void InitializeTextBuffer(void)
 
 void InitializeLineBuffer(void)
 {
-    lineBufferCapacity = 1024;
+    lineBufferCapacity = BUFFER_SIZE;
     lineBuffer = (LineBuffer *)malloc(lineBufferCapacity * sizeof(LineBuffer));
 }
 
@@ -178,7 +178,7 @@ void TextBufferController(void)
                 .lineLength = i - lineStart
             };
 
-            char line[1024];
+            char line[BUFFER_SIZE];
             strncpy(line, &textBuffer.text[lineStart], lineBuffer[textBuffer.lineCount].lineLength);
             line[lineBuffer[textBuffer.lineCount].lineLength] = '\0';
             Vector2 textSize = MeasureTextEx(font, line, FONT_SIZE, TEXT_MARGIN);
@@ -546,7 +546,7 @@ void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, 
         {
             if (i >= lineBufferCapacity) break;
 
-            char line[1024];
+            char line[BUFFER_SIZE];
             strncpy(line, &textBuffer.text[lineBuffer[i].lineStart], lineBuffer[i].lineLength);
             line[lineBuffer[i].lineLength] = '\0';
 
@@ -565,7 +565,7 @@ void DrawCursor(float lineHeight)
     {
         int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
         int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
-        char currentLine[1024];
+        char currentLine[BUFFER_SIZE];
         strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
         currentLine[charsInLine] = '\0';
 
@@ -608,7 +608,7 @@ void DrawSaveFileInput(void)
 {
     if (showSaveFileInput)
     {
-        saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH * 2)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT * 2)) / 2, INPUT_BOX_WIDTH * 2, INPUT_BOX_HEIGHT * 2};
+        saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT)) / 2, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
         char helpText[256] = "Enter file path to save.";
         DrawHelpText(helpText);
@@ -868,7 +868,7 @@ void UpdateView(void)
 
     int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
     int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
-    char currentLine[1024];
+    char currentLine[BUFFER_SIZE];
     strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
     currentLine[charsInLine] = '\0';
 
@@ -1045,13 +1045,13 @@ void DrawIndicatorOverlay(int startIndex, int endIndex, Color color)
         if (end <= start) continue;
 
         int prefixLen = start - lineStart;
-        char prefix[1024];
+        char prefix[BUFFER_SIZE];
         strncpy(prefix, &textBuffer.text[lineStart], prefixLen);
         prefix[prefixLen] = '\0';
         Vector2 prefixSize = MeasureTextEx(font, prefix, FONT_SIZE, TEXT_MARGIN);
 
         int selectionLen = end - start;
-        char selectionText[1024];
+        char selectionText[BUFFER_SIZE];
         strncpy(selectionText, &textBuffer.text[start], selectionLen);
         selectionText[selectionLen] = '\0';
         Vector2 selectionSize = MeasureTextEx(font, selectionText, FONT_SIZE, TEXT_MARGIN);
