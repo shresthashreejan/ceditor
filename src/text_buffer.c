@@ -159,6 +159,19 @@ void RemoveChar(TextBuffer *buffer, int key)
     }
 }
 
+void HandleSelectionDelete(void)
+{
+    int selectionLength = textBuffer.selectionEnd - textBuffer.selectionStart;
+    if (selectionLength > 0)
+    {
+        int operationKey = textBuffer.isForwardSelection ? KEY_BACKSPACE : KEY_DELETE;
+        for (int i = textBuffer.selectionStart; i < textBuffer.selectionEnd; i++)
+        {
+            RemoveChar(&textBuffer, operationKey);
+        }
+    }
+}
+
 void TextBufferController(void)
 {
     if (!textBuffer.text) return;
@@ -271,6 +284,10 @@ void ProcessKey(int key, bool ctrl, bool shift)
                 FreeTextBuffer();
                 InitializeTextBuffer();
             }
+            else if (textBuffer.hasSelection && !textBuffer.hasAllSelected)
+            {
+                HandleSelectionDelete();
+            }
             else
             {
                 RemoveChar(&textBuffer, KEY_BACKSPACE);
@@ -284,6 +301,10 @@ void ProcessKey(int key, bool ctrl, bool shift)
                 StoreUndo();
                 FreeTextBuffer();
                 InitializeTextBuffer();
+            }
+            else if (textBuffer.hasSelection && !textBuffer.hasAllSelected)
+            {
+                HandleSelectionDelete();
             }
             else
             {
@@ -935,6 +956,7 @@ void CalculateSelection(int key)
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
+                textBuffer.isForwardSelection = false;
             }
             break;
 
@@ -959,6 +981,7 @@ void CalculateSelection(int key)
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
+                textBuffer.isForwardSelection = true;
             }
             break;
 
@@ -984,6 +1007,7 @@ void CalculateSelection(int key)
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
+                textBuffer.isForwardSelection = false;
             }
             break;
 
@@ -1009,6 +1033,7 @@ void CalculateSelection(int key)
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
+                textBuffer.isForwardSelection = true;
             }
             break;
 

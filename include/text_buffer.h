@@ -16,6 +16,7 @@ typedef struct {
     bool hasAllSelected;
     bool hasSelection;
     bool renderSelection;
+    bool isForwardSelection;
 } TextBuffer;
 
 typedef struct {
