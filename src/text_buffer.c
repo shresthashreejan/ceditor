@@ -942,98 +942,160 @@ void CalculateSelection(int key)
         case KEY_LEFT:
             if (textBuffer.cursorPos.x > 0)
             {
-                if (!textBuffer.hasSelectionStarted)
+                if (textBuffer.hasSelection && textBuffer.hasSelectionStarted && textBuffer.isForwardSelection)
                 {
-                    textBuffer.hasSelectionStarted = true;
+                    if (textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
+                    {
+                        textBuffer.cursorPos.y--;
+                    }
+                    textBuffer.cursorPos.x--;
                     textBuffer.selectionEnd = textBuffer.cursorPos.x;
                 }
-                if (textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
+                else
                 {
-                    textBuffer.cursorPos.y--;
+                    if (!textBuffer.hasSelectionStarted)
+                    {
+                        textBuffer.hasSelectionStarted = true;
+                        textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                    }
+                    if (textBuffer.cursorPos.x == lineBuffer[(int)textBuffer.cursorPos.y].lineStart)
+                    {
+                        textBuffer.cursorPos.y--;
+                    }
+                    textBuffer.cursorPos.x--;
+                    textBuffer.selectionStart = textBuffer.cursorPos.x;
+                    textBuffer.isForwardSelection = false;
                 }
-                textBuffer.cursorPos.x--;
-                textBuffer.selectionStart = textBuffer.cursorPos.x;
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
-                textBuffer.isForwardSelection = false;
             }
             break;
 
         case KEY_RIGHT:
             if (textBuffer.cursorPos.x < textBuffer.length)
             {
-                if (!textBuffer.hasSelectionStarted)
+                if (textBuffer.hasSelection && textBuffer.hasSelectionStarted && !textBuffer.isForwardSelection)
                 {
-                    textBuffer.hasSelectionStarted = true;
+                    if ((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                    {
+                        textBuffer.cursorPos.y++;
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                    }
+                    else
+                    {
+                        textBuffer.cursorPos.x++;
+                    }
                     textBuffer.selectionStart = textBuffer.cursorPos.x;
-                }
-                if ((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
-                {
-                    textBuffer.cursorPos.y++;
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
                 }
                 else
                 {
-                    textBuffer.cursorPos.x++;
+                    if (!textBuffer.hasSelectionStarted)
+                    {
+                        textBuffer.hasSelectionStarted = true;
+                        textBuffer.selectionStart = textBuffer.cursorPos.x;
+                    }
+                    if ((textBuffer.cursorPos.x >= lineBuffer[(int)textBuffer.cursorPos.y].lineEnd) && textBuffer.cursorPos.y < textBuffer.lineCount)
+                    {
+                        textBuffer.cursorPos.y++;
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                    }
+                    else
+                    {
+                        textBuffer.cursorPos.x++;
+                    }
+                    textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                    textBuffer.isForwardSelection = true;
                 }
-                textBuffer.selectionEnd = textBuffer.cursorPos.x;
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
-                textBuffer.isForwardSelection = true;
             }
             break;
 
         case KEY_UP:
             if (textBuffer.cursorPos.y > 0)
             {
-                if (!textBuffer.hasSelectionStarted)
+                if (textBuffer.hasSelection && textBuffer.hasSelectionStarted && textBuffer.isForwardSelection)
                 {
-                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.cursorPos.y--;
+                    int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y + 1].lineStart;
+                    if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd)
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                    }
+                    else
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
+                    }
                     textBuffer.selectionEnd = textBuffer.cursorPos.x;
-                }
-                textBuffer.cursorPos.y--;
-                int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y + 1].lineStart;
-                if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd)
-                {
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
                 }
                 else
                 {
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
+                    if (!textBuffer.hasSelectionStarted)
+                    {
+                        textBuffer.hasSelectionStarted = true;
+                        textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                    }
+                    textBuffer.cursorPos.y--;
+                    int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y + 1].lineStart;
+                    if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd)
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                    }
+                    else
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
+                    }
+                    textBuffer.selectionStart = textBuffer.cursorPos.x;
+                    textBuffer.isForwardSelection = false;
                 }
-                textBuffer.selectionStart = textBuffer.cursorPos.x;
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
-                textBuffer.isForwardSelection = false;
             }
             break;
 
         case KEY_DOWN:
             if (textBuffer.cursorPos.y < textBuffer.lineCount - 1)
             {
-                if (!textBuffer.hasSelectionStarted)
+                if (textBuffer.hasSelection && textBuffer.hasSelectionStarted && !textBuffer.isForwardSelection)
                 {
-                    textBuffer.hasSelectionStarted = true;
+                    textBuffer.cursorPos.y++;
+                    int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y - 1].lineStart;
+                    if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd || textBuffer.cursorPos.y == textBuffer.lineCount - 1)
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                    }
+                    else
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
+                    }
                     textBuffer.selectionStart = textBuffer.cursorPos.x;
-                }
-                textBuffer.cursorPos.y++;
-                int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y - 1].lineStart;
-                if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd || textBuffer.cursorPos.y == textBuffer.lineCount - 1)
-                {
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
                 }
                 else
                 {
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
+                    if (!textBuffer.hasSelectionStarted)
+                    {
+                        textBuffer.hasSelectionStarted = true;
+                        textBuffer.selectionStart = textBuffer.cursorPos.x;
+                    }
+                    textBuffer.cursorPos.y++;
+                    int offset = textBuffer.cursorPos.x - lineBuffer[(int)textBuffer.cursorPos.y - 1].lineStart;
+                    if (lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset > lineBuffer[(int)textBuffer.cursorPos.y].lineEnd || textBuffer.cursorPos.y == textBuffer.lineCount - 1)
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                    }
+                    else
+                    {
+                        textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart + offset;
+                    }
+                    textBuffer.selectionEnd = textBuffer.cursorPos.x;
+                    textBuffer.isForwardSelection = true;
                 }
-                textBuffer.selectionEnd = textBuffer.cursorPos.x;
                 textBuffer.hasSelection = true;
                 textBuffer.hasAllSelected = false;
                 textBuffer.renderSelection = true;
-                textBuffer.isForwardSelection = true;
             }
             break;
 
