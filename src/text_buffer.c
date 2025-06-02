@@ -344,12 +344,25 @@ void ProcessKey(int key, bool ctrl, bool shift)
         case KEY_LEFT:
             if (ctrl)
             {
-                textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                for (int i = textBuffer.cursorPos.x - 1; i >= lineBuffer[(int)textBuffer.cursorPos.y].lineStart; i--)
+                {
+                    if (textBuffer.text[i] == KEY_SPACE)
+                    {
+                        textBuffer.cursorPos.x = i;
+                        break;
+                    }
+                }
                 ClearSelectionIndicator();
             }
             else if (shift)
             {
                 CalculateSelection(KEY_LEFT);
+            }
+            else if (ctrl && shift)
+            {
+                // TODO: ctrl + shift is not working
+                textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                ClearSelectionIndicator();
             }
             else
             {
