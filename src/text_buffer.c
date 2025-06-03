@@ -342,25 +342,17 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_LEFT:
-            if (ctrl)
+            if (ctrl && !shift)
             {
-                for (int i = textBuffer.cursorPos.x - 1; i >= lineBuffer[(int)textBuffer.cursorPos.y].lineStart; i--)
-                {
-                    if (textBuffer.text[i] == KEY_SPACE)
-                    {
-                        textBuffer.cursorPos.x = i;
-                        break;
-                    }
-                }
+                HandleCtrlArrowKeyMovement(KEY_LEFT);
                 ClearSelectionIndicator();
             }
-            else if (shift)
+            else if (shift && !ctrl)
             {
                 CalculateSelection(KEY_LEFT);
             }
             else if (ctrl && shift)
             {
-                // TODO: ctrl + shift is not working
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
                 ClearSelectionIndicator();
             }
@@ -372,14 +364,19 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_RIGHT:
-            if (ctrl)
+            if (ctrl && !shift)
+            {
+                HandleCtrlArrowKeyMovement(KEY_RIGHT);
+                ClearSelectionIndicator();
+            }
+            else if (shift && !ctrl)
+            {
+                CalculateSelection(KEY_RIGHT);
+            }
+            else if (ctrl && shift)
             {
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
                 ClearSelectionIndicator();
-            }
-            else if (shift)
-            {
-                CalculateSelection(KEY_RIGHT);
             }
             else
             {
@@ -520,6 +517,22 @@ void ProcessKeyDown(int key, bool ctrl, bool shift)
 
                 case KEY_R:
                     if (ctrl) Redo();
+                    break;
+
+                case KEY_LEFT:
+                    if (ctrl && !shift)
+                    {
+                        HandleCtrlArrowKeyMovement(KEY_LEFT);
+                        ClearSelectionIndicator();
+                    }
+                    break;
+
+                case KEY_RIGHT:
+                    if (ctrl && !shift)
+                    {
+                        HandleCtrlArrowKeyMovement(KEY_RIGHT);
+                        ClearSelectionIndicator();
+                    }
                     break;
 
                 default:
@@ -945,6 +958,70 @@ void UpdateView(void)
     {
         scroll.y -= cursorScreenY - (panelView.height - lineHeight);
     }
+}
+
+void HandleCtrlArrowKeyMovement(int key)
+{
+    switch (key)
+    {
+        case KEY_LEFT:
+            if (textBuffer.cursorPos.x > 0)
+            {
+                int lineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                if (textBuffer.cursorPos.y > 0 && textBuffer.text[(int)textBuffer.cursorPos.x] == textBuffer.text[lineStart])
+                {
+                    int currentLineIndex = (int)textBuffer.cursorPos.y;
+                    textBuffer.cursorPos.x = lineBuffer[currentLineIndex - 1].lineEnd;
+                    textBuffer.cursorPos.y--;
+                    return;
+                }
+                for (int i = textBuffer.cursorPos.x - 1; i >= lineStart; i--)
+                {
+                    if (textBuffer.text[i] == textBuffer.text[lineStart])
+                    {
+                        textBuffer.cursorPos.x = lineStart;
+                        break;
+                    }
+                    if (textBuffer.text[i] == KEY_SPACE)
+                    {
+                        textBuffer.cursorPos.x = i;
+                        break;
+                    }
+                }
+            }
+            break;
+
+        case KEY_RIGHT:
+            if (textBuffer.cursorPos.x < textBuffer.length)
+            {
+                int lineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                if (textBuffer.cursorPos.y < textBuffer.lineCount && textBuffer.text[(int)textBuffer.cursorPos.x] == textBuffer.text[lineEnd])
+                {
+                    int currentLineIndex = (int)textBuffer.cursorPos.y;
+                    textBuffer.cursorPos.x = lineBuffer[currentLineIndex + 1].lineStart;
+                    textBuffer.cursorPos.y++;
+                    return;
+                }
+                for (int i = textBuffer.cursorPos.x + 1; i <= lineEnd; i++)
+                {
+                    if (textBuffer.text[i] == textBuffer.text[lineEnd])
+                    {
+                        textBuffer.cursorPos.x = lineEnd;
+                        break;
+                    }
+                    if (textBuffer.text[i] == KEY_SPACE)
+                    {
+                        textBuffer.cursorPos.x = i;
+                        break;
+                    }
+                }
+            }
+            break;
+
+        default:
+            break;
+    }
+    UpdateView();
 }
 
 /* SELECTION */
