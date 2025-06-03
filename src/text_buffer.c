@@ -347,7 +347,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
                 HandleCtrlArrowKeyMovement(KEY_LEFT);
                 ClearSelectionIndicator();
             }
-            else if (shift && !ctrl)
+            else if (!ctrl && shift)
             {
                 CalculateSelection(KEY_LEFT);
             }
@@ -369,7 +369,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
                 HandleCtrlArrowKeyMovement(KEY_RIGHT);
                 ClearSelectionIndicator();
             }
-            else if (shift && !ctrl)
+            else if (!ctrl && shift)
             {
                 CalculateSelection(KEY_RIGHT);
             }
@@ -525,6 +525,14 @@ void ProcessKeyDown(int key, bool ctrl, bool shift)
                         HandleCtrlArrowKeyMovement(KEY_LEFT);
                         ClearSelectionIndicator();
                     }
+                    else if (!ctrl && shift)
+                    {
+                        CalculateSelection(key);
+                    }
+                    else
+                    {
+                        CalculateCursorPosition(key);
+                    }
                     break;
 
                 case KEY_RIGHT:
@@ -533,10 +541,18 @@ void ProcessKeyDown(int key, bool ctrl, bool shift)
                         HandleCtrlArrowKeyMovement(KEY_RIGHT);
                         ClearSelectionIndicator();
                     }
+                    else if (!ctrl && shift)
+                    {
+                        CalculateSelection(key);
+                    }
+                    else
+                    {
+                        CalculateCursorPosition(key);
+                    }
                     break;
 
                 default:
-                    if (shift) CalculateSelection(key); else CalculateCursorPosition(key);
+                    if (!ctrl && shift) CalculateSelection(key); else CalculateCursorPosition(key);
                     break;
             }
             keyDownElapsedTime = 0.0f;
