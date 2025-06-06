@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "raylib.h"
 #include "raygui.h"
@@ -159,19 +160,6 @@ void RemoveChar(TextBuffer *buffer, int key)
     }
 }
 
-void HandleSelectionDelete(void)
-{
-    int selectionLength = textBuffer.selectionEnd - textBuffer.selectionStart;
-    if (selectionLength > 0)
-    {
-        int operationKey = textBuffer.isForwardSelection ? KEY_BACKSPACE : KEY_DELETE;
-        for (int i = textBuffer.selectionStart; i < textBuffer.selectionEnd; i++)
-        {
-            RemoveChar(&textBuffer, operationKey);
-        }
-    }
-}
-
 void TextBufferController(void)
 {
     if (!textBuffer.text) return;
@@ -209,6 +197,7 @@ void TextBufferController(void)
     UpdateView();
 }
 
+/* SIDEBAR */
 void UpdateSidebarWidth(void)
 {
     char lineNumberStr[16];
@@ -584,6 +573,144 @@ void ProcessKeyDown(int key, bool ctrl, bool shift)
     }
 }
 
+void HandleCtrlHoldOperations(int key)
+{
+    switch (key)
+    {
+        case KEY_LEFT:
+            if (textBuffer.cursorPos.x > 0)
+            {
+                int lineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                if ((int)textBuffer.cursorPos.x == lineStart && textBuffer.cursorPos.y > 0)
+                {
+                    textBuffer.cursorPos.y--;
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                    return;
+                }
+                for (int i = (int)textBuffer.cursorPos.x - 1; i >= lineStart; i--)
+                {
+                    if (textBuffer.text[i] == KEY_SPACE)
+                    {
+                        textBuffer.cursorPos.x = i;
+                        break;
+                    }
+                    if (i == lineStart)
+                    {
+                        textBuffer.cursorPos.x = lineStart;
+                        break;
+                    }
+                }
+            }
+            break;
+
+        case KEY_RIGHT:
+            if (textBuffer.cursorPos.x < textBuffer.length)
+            {
+                int lineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                if (textBuffer.cursorPos.y < textBuffer.lineCount - 1 && (int)textBuffer.cursorPos.x == lineEnd)
+                {
+                    textBuffer.cursorPos.y++;
+                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                    return;
+                }
+                for (int i = (int)textBuffer.cursorPos.x + 1; i <= lineEnd; i++)
+                {
+                    if (textBuffer.text[i] == KEY_SPACE)
+                    {
+                        textBuffer.cursorPos.x = i;
+                        break;
+                    }
+                    if (i == lineEnd)
+                    {
+                        textBuffer.cursorPos.x = lineEnd;
+                        break;
+                    }
+                }
+            }
+            break;
+
+        case KEY_BACKSPACE:
+            if (textBuffer.cursorPos.x > 0)
+            {
+                int wordStartIndex;
+                int wordEndIndex;
+                int lineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                if ((int)textBuffer.cursorPos.x == lineStart && textBuffer.cursorPos.y > 0)
+                {
+                    int prevLineIndex = (int)textBuffer.cursorPos.y - 1;
+                    textBuffer.cursorPos.x = lineBuffer[prevLineIndex].lineEnd;
+                    RemoveChar(&textBuffer, KEY_DELETE);
+                    return;
+                }
+                for (int i = (int)textBuffer.cursorPos.x - 1; i >= lineStart; i--)
+                {
+                    if (textBuffer.text[i] == KEY_SPACE)
+                    {
+                        wordEndIndex = textBuffer.cursorPos.x;
+                        wordStartIndex = i;
+                        break;
+                    }
+                    if (i == lineStart)
+                    {
+                        wordEndIndex = textBuffer.cursorPos.x;
+                        wordStartIndex = lineStart;
+                        break;
+                    }
+                }
+                if (wordEndIndex > wordStartIndex)
+                {
+                    for (int i = wordStartIndex; i < wordEndIndex; i++)
+                    {
+                        RemoveChar(&textBuffer, KEY_BACKSPACE);
+                    }
+                }
+            }
+            break;
+
+        case KEY_DELETE:
+            if (textBuffer.cursorPos.x < textBuffer.length)
+            {
+                int wordStartIndex;
+                int wordEndIndex;
+                int lineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                if (textBuffer.cursorPos.y < textBuffer.lineCount - 1 && (int)textBuffer.cursorPos.x == lineEnd)
+                {
+                    int nextLineIndex = textBuffer.cursorPos.y + 1;
+                    textBuffer.cursorPos.x = lineBuffer[nextLineIndex].lineStart;
+                    RemoveChar(&textBuffer, KEY_BACKSPACE);
+                    return;
+                }
+                for (int i = (int)textBuffer.cursorPos.x + 1; i <= lineEnd; i++)
+                {
+                    if (textBuffer.text[i] == KEY_SPACE)
+                    {
+                        wordStartIndex = textBuffer.cursorPos.x;
+                        wordEndIndex = i;
+                        break;
+                    }
+                    if (i == lineEnd)
+                    {
+                        wordStartIndex = textBuffer.cursorPos.x;
+                        wordEndIndex = lineEnd;
+                        break;
+                    }
+                }
+                if (wordEndIndex > wordStartIndex)
+                {
+                    for (int i = wordStartIndex; i < wordEndIndex; i++)
+                    {
+                        RemoveChar(&textBuffer, KEY_DELETE);
+                    }
+                }
+            }
+            break;
+
+        default:
+            break;
+    }
+    UpdateView();
+}
+
 /* RENDERING */
 void RenderTextBuffer(void)
 {
@@ -751,6 +878,97 @@ void DrawSaveHelpText(void)
     }
 }
 
+void DrawSelectionIndicator(void)
+{
+    if (!textBuffer.hasSelection || !textBuffer.renderSelection) return;
+    int selStart = textBuffer.selectionStart;
+    int selEnd = textBuffer.selectionEnd;
+    if (selStart > selEnd)
+    {
+        int tmp = selStart;
+        selStart = selEnd;
+        selEnd = tmp;
+    }
+    DrawIndicatorOverlay(selStart, selEnd, LIGHTBLUE);
+}
+
+void DrawSearchIndicator(void)
+{
+    if (searchIndex.hasStringMatch) DrawIndicatorOverlay(searchIndex.start, searchIndex.end, GREEN);
+}
+
+void DrawIndicatorOverlay(int startIndex, int endIndex, Color color)
+{
+    for (int i = 0; i < textBuffer.lineCount; i++)
+    {
+        int lineStart = lineBuffer[i].lineStart;
+        int lineEnd = lineBuffer[i].lineEnd;
+
+        int start = (startIndex > lineStart) ? startIndex : lineStart;
+        int end = (endIndex < lineEnd) ? endIndex : lineEnd;
+        if (end <= start) continue;
+
+        int prefixLen = start - lineStart;
+        char prefix[BUFFER_SIZE];
+        strncpy(prefix, &textBuffer.text[lineStart], prefixLen);
+        prefix[prefixLen] = '\0';
+        Vector2 prefixSize = MeasureTextEx(font, prefix, FONT_SIZE, TEXT_MARGIN);
+
+        int selectionLen = end - start;
+        char selectionText[BUFFER_SIZE];
+        strncpy(selectionText, &textBuffer.text[start], selectionLen);
+        selectionText[selectionLen] = '\0';
+        Vector2 selectionSize = MeasureTextEx(font, selectionText, FONT_SIZE, TEXT_MARGIN);
+
+        int rectX = sidebarWidth + TEXT_MARGIN + (int)scroll.x + (int)prefixSize.x;
+        int rectY = TEXT_MARGIN + (int)(i * lineHeight) + (int)scroll.y;
+
+        BeginBlendMode(BLEND_CUSTOM);
+            rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, RAYWHITE);
+            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, color);
+        EndBlendMode();
+    }
+}
+
+void UpdateView(void)
+{
+    if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) return;
+
+    float cursorX;
+    float cursorY = textBuffer.cursorPos.y * lineHeight;
+
+    int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+    int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
+    char currentLine[BUFFER_SIZE];
+    strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
+    currentLine[charsInLine] = '\0';
+
+    Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
+    cursorX = textSize.x;
+
+    float cursorScreenX = sidebarWidth + TEXT_MARGIN + cursorX + scroll.x;
+    float cursorScreenY = TEXT_MARGIN + cursorY + scroll.y;
+
+    if (cursorScreenX < sidebarWidth + TEXT_MARGIN)
+    {
+        scroll.x += (sidebarWidth + TEXT_MARGIN) - cursorScreenX;
+    }
+    else if (cursorScreenX > (panelView.width + sidebarWidth - TEXT_MARGIN))
+    {
+        scroll.x -= cursorScreenX - (panelView.width + sidebarWidth - TEXT_MARGIN);
+    }
+
+    if (cursorScreenY < TEXT_MARGIN)
+    {
+        scroll.y += TEXT_MARGIN - cursorScreenY;
+    }
+    else if (cursorScreenY > panelView.height - lineHeight)
+    {
+        scroll.y -= cursorScreenY - (panelView.height - lineHeight);
+    }
+}
+
 /* TEXT SEARCH */
 void SearchText(char prevSearchInput[256], char searchInput[256])
 {
@@ -771,7 +989,7 @@ void SearchText(char prevSearchInput[256], char searchInput[256])
                 searchStartPtr = textBuffer.text + searchIndex.end;
             }
 
-            char *match = strstr(searchStartPtr, searchInput);
+            char *match = SearchStringIgnoreCase(searchStartPtr, searchInput);
             if (match != NULL)
             {
                 searchIndex.hasStringMatch = true;
@@ -800,6 +1018,27 @@ void SearchText(char prevSearchInput[256], char searchInput[256])
         showSearchInput = false;
         searchIndex.hasStringMatch = false;
     }
+}
+
+char *SearchStringIgnoreCase(const char *haystack, const char *needle)
+{
+    if (*needle == '\0') return (char *)haystack;
+
+    while (*haystack)
+    {
+        const char *h = haystack;
+        const char *n = needle;
+
+        while (*h && *n && tolower((unsigned char)*h) == tolower((unsigned char)*n))
+        {
+            h++;
+            n++;
+        }
+
+        if (*n == '\0') return (char *)haystack;
+        haystack++;
+    }
+    return NULL;
 }
 
 /* CURSOR */
@@ -966,182 +1205,6 @@ void NavigateToLineNumber(int lineNumber)
         textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
         UpdateView();
     }
-}
-
-void UpdateView(void)
-{
-    if (textBuffer.cursorPos.y < 0 || textBuffer.cursorPos.y >= textBuffer.lineCount) return;
-
-    float cursorX;
-    float cursorY = textBuffer.cursorPos.y * lineHeight;
-
-    int cursorLineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
-    int charsInLine = textBuffer.cursorPos.x - cursorLineStart;
-    char currentLine[BUFFER_SIZE];
-    strncpy(currentLine, &textBuffer.text[cursorLineStart], charsInLine);
-    currentLine[charsInLine] = '\0';
-
-    Vector2 textSize = MeasureTextEx(font, currentLine, FONT_SIZE, TEXT_MARGIN);
-    cursorX = textSize.x;
-
-    float cursorScreenX = sidebarWidth + TEXT_MARGIN + cursorX + scroll.x;
-    float cursorScreenY = TEXT_MARGIN + cursorY + scroll.y;
-
-    if (cursorScreenX < sidebarWidth + TEXT_MARGIN)
-    {
-        scroll.x += (sidebarWidth + TEXT_MARGIN) - cursorScreenX;
-    }
-    else if (cursorScreenX > (panelView.width + sidebarWidth - TEXT_MARGIN))
-    {
-        scroll.x -= cursorScreenX - (panelView.width + sidebarWidth - TEXT_MARGIN);
-    }
-
-    if (cursorScreenY < TEXT_MARGIN)
-    {
-        scroll.y += TEXT_MARGIN - cursorScreenY;
-    }
-    else if (cursorScreenY > panelView.height - lineHeight)
-    {
-        scroll.y -= cursorScreenY - (panelView.height - lineHeight);
-    }
-}
-
-void HandleCtrlHoldOperations(int key)
-{
-    switch (key)
-    {
-        case KEY_LEFT:
-            if (textBuffer.cursorPos.x > 0)
-            {
-                int lineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
-                if ((int)textBuffer.cursorPos.x == lineStart && textBuffer.cursorPos.y > 0)
-                {
-                    textBuffer.cursorPos.y--;
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
-                    return;
-                }
-                for (int i = (int)textBuffer.cursorPos.x - 1; i >= lineStart; i--)
-                {
-                    if (textBuffer.text[i] == KEY_SPACE)
-                    {
-                        textBuffer.cursorPos.x = i;
-                        break;
-                    }
-                    if (i == lineStart)
-                    {
-                        textBuffer.cursorPos.x = lineStart;
-                        break;
-                    }
-                }
-            }
-            break;
-
-        case KEY_RIGHT:
-            if (textBuffer.cursorPos.x < textBuffer.length)
-            {
-                int lineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
-                if (textBuffer.cursorPos.y < textBuffer.lineCount - 1 && (int)textBuffer.cursorPos.x == lineEnd)
-                {
-                    textBuffer.cursorPos.y++;
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
-                    return;
-                }
-                for (int i = (int)textBuffer.cursorPos.x + 1; i <= lineEnd; i++)
-                {
-                    if (textBuffer.text[i] == KEY_SPACE)
-                    {
-                        textBuffer.cursorPos.x = i;
-                        break;
-                    }
-                    if (i == lineEnd)
-                    {
-                        textBuffer.cursorPos.x = lineEnd;
-                        break;
-                    }
-                }
-            }
-            break;
-
-        case KEY_BACKSPACE:
-            if (textBuffer.cursorPos.x > 0)
-            {
-                int wordStartIndex;
-                int wordEndIndex;
-                int lineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
-                if ((int)textBuffer.cursorPos.x == lineStart && textBuffer.cursorPos.y > 0)
-                {
-                    int prevLineIndex = (int)textBuffer.cursorPos.y - 1;
-                    textBuffer.cursorPos.x = lineBuffer[prevLineIndex].lineEnd;
-                    RemoveChar(&textBuffer, KEY_DELETE);
-                    return;
-                }
-                for (int i = (int)textBuffer.cursorPos.x - 1; i >= lineStart; i--)
-                {
-                    if (textBuffer.text[i] == KEY_SPACE)
-                    {
-                        wordEndIndex = textBuffer.cursorPos.x;
-                        wordStartIndex = i;
-                        break;
-                    }
-                    if (i == lineStart)
-                    {
-                        wordEndIndex = textBuffer.cursorPos.x;
-                        wordStartIndex = lineStart;
-                        break;
-                    }
-                }
-                if (wordEndIndex > wordStartIndex)
-                {
-                    for (int i = wordStartIndex; i < wordEndIndex; i++)
-                    {
-                        RemoveChar(&textBuffer, KEY_BACKSPACE);
-                    }
-                }
-            }
-            break;
-
-        case KEY_DELETE:
-            if (textBuffer.cursorPos.x < textBuffer.length)
-            {
-                int wordStartIndex;
-                int wordEndIndex;
-                int lineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
-                if (textBuffer.cursorPos.y < textBuffer.lineCount - 1 && (int)textBuffer.cursorPos.x == lineEnd)
-                {
-                    int nextLineIndex = textBuffer.cursorPos.y + 1;
-                    textBuffer.cursorPos.x = lineBuffer[nextLineIndex].lineStart;
-                    RemoveChar(&textBuffer, KEY_BACKSPACE);
-                    return;
-                }
-                for (int i = (int)textBuffer.cursorPos.x + 1; i <= lineEnd; i++)
-                {
-                    if (textBuffer.text[i] == KEY_SPACE)
-                    {
-                        wordStartIndex = textBuffer.cursorPos.x;
-                        wordEndIndex = i;
-                        break;
-                    }
-                    if (i == lineEnd)
-                    {
-                        wordStartIndex = textBuffer.cursorPos.x;
-                        wordEndIndex = lineEnd;
-                        break;
-                    }
-                }
-                if (wordEndIndex > wordStartIndex)
-                {
-                    for (int i = wordStartIndex; i < wordEndIndex; i++)
-                    {
-                        RemoveChar(&textBuffer, KEY_DELETE);
-                    }
-                }
-            }
-            break;
-
-        default:
-            break;
-    }
-    UpdateView();
 }
 
 /* SELECTION */
@@ -1327,63 +1390,23 @@ void CalculateSelection(int key)
     UpdateView();
 }
 
-void DrawSelectionIndicator(void)
-{
-    if (!textBuffer.hasSelection || !textBuffer.renderSelection) return;
-    int selStart = textBuffer.selectionStart;
-    int selEnd = textBuffer.selectionEnd;
-    if (selStart > selEnd)
-    {
-        int tmp = selStart;
-        selStart = selEnd;
-        selEnd = tmp;
-    }
-    DrawIndicatorOverlay(selStart, selEnd, LIGHTBLUE);
-}
-
-void DrawSearchIndicator(void)
-{
-    if (searchIndex.hasStringMatch) DrawIndicatorOverlay(searchIndex.start, searchIndex.end, GREEN);
-}
-
-void DrawIndicatorOverlay(int startIndex, int endIndex, Color color)
-{
-    for (int i = 0; i < textBuffer.lineCount; i++)
-    {
-        int lineStart = lineBuffer[i].lineStart;
-        int lineEnd = lineBuffer[i].lineEnd;
-
-        int start = (startIndex > lineStart) ? startIndex : lineStart;
-        int end = (endIndex < lineEnd) ? endIndex : lineEnd;
-        if (end <= start) continue;
-
-        int prefixLen = start - lineStart;
-        char prefix[BUFFER_SIZE];
-        strncpy(prefix, &textBuffer.text[lineStart], prefixLen);
-        prefix[prefixLen] = '\0';
-        Vector2 prefixSize = MeasureTextEx(font, prefix, FONT_SIZE, TEXT_MARGIN);
-
-        int selectionLen = end - start;
-        char selectionText[BUFFER_SIZE];
-        strncpy(selectionText, &textBuffer.text[start], selectionLen);
-        selectionText[selectionLen] = '\0';
-        Vector2 selectionSize = MeasureTextEx(font, selectionText, FONT_SIZE, TEXT_MARGIN);
-
-        int rectX = sidebarWidth + TEXT_MARGIN + (int)scroll.x + (int)prefixSize.x;
-        int rectY = TEXT_MARGIN + (int)(i * lineHeight) + (int)scroll.y;
-
-        BeginBlendMode(BLEND_CUSTOM);
-            rlSetBlendFactors(RL_ONE, RL_ONE, RL_FUNC_SUBTRACT);
-            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, RAYWHITE);
-            DrawRectangle(rectX, rectY, (int)selectionSize.x, FONT_SIZE, color);
-        EndBlendMode();
-    }
-}
-
 void ClearSelectionIndicator(void)
 {
     if (textBuffer.renderSelection) textBuffer.renderSelection = false;
     if (textBuffer.hasSelectionStarted) textBuffer.hasSelectionStarted = false;
+}
+
+void HandleSelectionDelete(void)
+{
+    int selectionLength = textBuffer.selectionEnd - textBuffer.selectionStart;
+    if (selectionLength > 0)
+    {
+        int operationKey = textBuffer.isForwardSelection ? KEY_BACKSPACE : KEY_DELETE;
+        for (int i = textBuffer.selectionStart; i < textBuffer.selectionEnd; i++)
+        {
+            RemoveChar(&textBuffer, operationKey);
+        }
+    }
 }
 
 /* FILE HANDLING */

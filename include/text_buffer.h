@@ -86,5 +86,6 @@ void ResetKeyDownDelay(int key);
 void HandleCtrlHoldOperations(int key);
 int CalculateCursorPosX(int previousY);
 bool KeyController(void);
+char *SearchStringIgnoreCase(const char *haystack, const char *needle);
 
 #endif
