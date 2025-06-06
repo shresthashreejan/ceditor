@@ -884,6 +884,10 @@ void CalculateCursorPosition(int key)
                 int cursorX = CalculateCursorPosX(previousY);
                 textBuffer.cursorPos.x = cursorX;
             }
+            else if (textBuffer.cursorPos.y == 0)
+            {
+                textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+            }
             break;
 
         case KEY_DOWN:
@@ -901,6 +905,10 @@ void CalculateCursorPosition(int key)
                 }
                 int cursorX = CalculateCursorPosX(previousY);
                 textBuffer.cursorPos.x = cursorX;
+            }
+            else if (textBuffer.cursorPos.y == textBuffer.lineCount - 1)
+            {
+                textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
             }
             break;
 
