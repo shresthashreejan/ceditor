@@ -1062,8 +1062,9 @@ void HandleCtrlHoldOperations(int key)
                 int lineStart = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
                 if ((int)textBuffer.cursorPos.x == lineStart && textBuffer.cursorPos.y > 0)
                 {
-                    textBuffer.cursorPos.y--;
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                    int prevLineIndex = (int)textBuffer.cursorPos.y - 1;
+                    textBuffer.cursorPos.x = lineBuffer[prevLineIndex].lineEnd;
+                    RemoveChar(&textBuffer, KEY_DELETE);
                     return;
                 }
                 for (int i = (int)textBuffer.cursorPos.x - 1; i >= lineStart; i--)
@@ -1083,7 +1084,7 @@ void HandleCtrlHoldOperations(int key)
                 }
                 if (wordEndIndex > wordStartIndex)
                 {
-                    for (int i = 0; i < wordEndIndex - wordStartIndex; i++)
+                    for (int i = wordStartIndex; i < wordEndIndex; i++)
                     {
                         RemoveChar(&textBuffer, KEY_BACKSPACE);
                     }
@@ -1099,8 +1100,9 @@ void HandleCtrlHoldOperations(int key)
                 int lineEnd = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
                 if (textBuffer.cursorPos.y < textBuffer.lineCount - 1 && (int)textBuffer.cursorPos.x == lineEnd)
                 {
-                    textBuffer.cursorPos.y++;
-                    textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                    int nextLineIndex = textBuffer.cursorPos.y + 1;
+                    textBuffer.cursorPos.x = lineBuffer[nextLineIndex].lineStart;
+                    RemoveChar(&textBuffer, KEY_BACKSPACE);
                     return;
                 }
                 for (int i = (int)textBuffer.cursorPos.x + 1; i <= lineEnd; i++)
@@ -1120,7 +1122,7 @@ void HandleCtrlHoldOperations(int key)
                 }
                 if (wordEndIndex > wordStartIndex)
                 {
-                    for (int i = 0; i < wordEndIndex - wordStartIndex; i++)
+                    for (int i = wordStartIndex; i < wordEndIndex; i++)
                     {
                         RemoveChar(&textBuffer, KEY_DELETE);
                     }
