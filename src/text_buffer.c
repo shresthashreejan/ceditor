@@ -135,9 +135,9 @@ void InsertChar(TextBuffer *buffer, char ch)
     showSaveHelpText = false;
 }
 
-void RemoveChar(TextBuffer *buffer, int key)
+void RemoveChar(TextBuffer *buffer, int key, bool storeUndoFlag)
 {
-    StoreUndo();
+    if (storeUndoFlag) StoreUndo();
     if ((key == KEY_BACKSPACE && buffer->cursorPos.x > 0) || (key == KEY_DELETE && buffer->cursorPos.x < buffer->length))
     {
         if (key == KEY_BACKSPACE)
@@ -283,7 +283,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             }
             else
             {
-                RemoveChar(&textBuffer, KEY_BACKSPACE);
+                RemoveChar(&textBuffer, KEY_BACKSPACE, true);
             }
             ClearSelectionIndicator();
             break;
@@ -305,7 +305,7 @@ void ProcessKey(int key, bool ctrl, bool shift)
             }
             else
             {
-                RemoveChar(&textBuffer, KEY_DELETE);
+                RemoveChar(&textBuffer, KEY_DELETE, true);
             }
             ClearSelectionIndicator();
             break;
@@ -507,7 +507,7 @@ void ProcessKeyDown(int key, bool ctrl, bool shift)
                     }
                     else if (!ctrl && !shift)
                     {
-                        RemoveChar(&textBuffer, key);
+                        RemoveChar(&textBuffer, key, true);
                     }
                     break;
 
@@ -518,7 +518,7 @@ void ProcessKeyDown(int key, bool ctrl, bool shift)
                     }
                     else if (!ctrl && !shift)
                     {
-                        RemoveChar(&textBuffer, key);
+                        RemoveChar(&textBuffer, key, true);
                     }
                     break;
 
@@ -639,7 +639,7 @@ void HandleCtrlHoldOperations(int key)
                 {
                     int prevLineIndex = (int)textBuffer.cursorPos.y - 1;
                     textBuffer.cursorPos.x = lineBuffer[prevLineIndex].lineEnd;
-                    RemoveChar(&textBuffer, KEY_DELETE);
+                    RemoveChar(&textBuffer, KEY_DELETE, true);
                     return;
                 }
                 for (int i = (int)textBuffer.cursorPos.x - 1; i >= lineStart; i--)
@@ -659,9 +659,10 @@ void HandleCtrlHoldOperations(int key)
                 }
                 if (wordEndIndex > wordStartIndex)
                 {
+                    StoreUndo();
                     for (int i = wordStartIndex; i < wordEndIndex; i++)
                     {
-                        RemoveChar(&textBuffer, KEY_BACKSPACE);
+                        RemoveChar(&textBuffer, KEY_BACKSPACE, false);
                     }
                 }
             }
@@ -677,7 +678,7 @@ void HandleCtrlHoldOperations(int key)
                 {
                     int nextLineIndex = textBuffer.cursorPos.y + 1;
                     textBuffer.cursorPos.x = lineBuffer[nextLineIndex].lineStart;
-                    RemoveChar(&textBuffer, KEY_BACKSPACE);
+                    RemoveChar(&textBuffer, KEY_BACKSPACE, true);
                     return;
                 }
                 for (int i = (int)textBuffer.cursorPos.x + 1; i <= lineEnd; i++)
@@ -697,9 +698,10 @@ void HandleCtrlHoldOperations(int key)
                 }
                 if (wordEndIndex > wordStartIndex)
                 {
+                    StoreUndo();
                     for (int i = wordStartIndex; i < wordEndIndex; i++)
                     {
-                        RemoveChar(&textBuffer, KEY_DELETE);
+                        RemoveChar(&textBuffer, KEY_DELETE, false);
                     }
                 }
             }
@@ -1402,9 +1404,10 @@ void HandleSelectionDelete(void)
     if (selectionLength > 0)
     {
         int operationKey = textBuffer.isForwardSelection ? KEY_BACKSPACE : KEY_DELETE;
+        StoreUndo();
         for (int i = textBuffer.selectionStart; i < textBuffer.selectionEnd; i++)
         {
-            RemoveChar(&textBuffer, operationKey);
+            RemoveChar(&textBuffer, operationKey, false);
         }
     }
 }
