@@ -469,11 +469,14 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_Z:
-            if (ctrl) Undo();
-            break;
-
-        case KEY_R:
-            if (ctrl) Redo();
+            if (ctrl && !shift)
+            {
+                Undo();
+            }
+            else if (ctrl && shift)
+            {
+                Redo();
+            }
             break;
 
         case KEY_TAB:
