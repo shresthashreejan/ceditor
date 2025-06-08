@@ -18,6 +18,7 @@ void SetupConfiguration(void)
     SetWindowMinSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     SetExitKey(KEY_NULL);
     LoadResources();
+    MaximizeWindow();
 }
 
 void LoadResources(void)
