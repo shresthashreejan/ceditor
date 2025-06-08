@@ -11,7 +11,7 @@ bool showFps = false;
 
 void ScreenController(void)
 {
-    ClearBackground(RAYWHITE);
+    ClearBackground(BACKGROUND_COLOR);
     if (KeyController()) TextBufferController(); else UpdateCursorState();
     RenderTextBuffer();
     RenderFrameRate();

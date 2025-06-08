@@ -4268,15 +4268,15 @@ void GuiLoadStyleDefault(void)
     // Initialize default LIGHT style property values
     // WARNING: Default value are applied to all controls on set but
     // they can be overwritten later on for every custom control
-    GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, 0x838383ff);
-    GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0xc9c9c9ff);
+    GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, 0x343A40ff); // MODIFIED: Scrollbar and border color
+    GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, 0x6C757Dff); // MODIFIED: Scrollbar's empty space color
     GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, 0x686868ff);
-    GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, 0x5bb2d9ff);
+    GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, 0x1B2A41ff); // MODIFIED: Focused scrollbar and border color
     GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, 0xc9effeff);
     GuiSetStyle(DEFAULT, TEXT_COLOR_FOCUSED, 0x6c9bbcff);
-    GuiSetStyle(DEFAULT, BORDER_COLOR_PRESSED, 0x0492c7ff);
-    GuiSetStyle(DEFAULT, BASE_COLOR_PRESSED, 0x97e8ffff);
-    GuiSetStyle(DEFAULT, TEXT_COLOR_PRESSED, 0x368bafff);
+    GuiSetStyle(DEFAULT, BORDER_COLOR_PRESSED, 0x1B2A41ff); // MODIFIED: Active scrollbar and border color
+    GuiSetStyle(DEFAULT, BASE_COLOR_PRESSED, 0x6C757Dff); // MODIFIED: Background color for GuiTextBox
+    GuiSetStyle(DEFAULT, TEXT_COLOR_PRESSED, 0xced4daff); // MODIFIED: Text color for GuiTextBox
     GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, 0xb5c1c2ff);
     GuiSetStyle(DEFAULT, BASE_COLOR_DISABLED, 0xe6e9e9ff);
     GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED, 0xaeb7b8ff);
@@ -4289,7 +4289,8 @@ void GuiLoadStyleDefault(void)
     GuiSetStyle(DEFAULT, TEXT_SIZE, 10);                // DEFAULT, shared by all controls
     GuiSetStyle(DEFAULT, TEXT_SPACING, 1);              // DEFAULT, shared by all controls
     GuiSetStyle(DEFAULT, LINE_COLOR, 0x90abb5ff);       // DEFAULT specific property
-    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0xf5f5f5ff); // DEFAULT specific property
+    // MODIFIED: Overall background color
+    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x1B2A41ff); // DEFAULT specific property
     GuiSetStyle(DEFAULT, TEXT_LINE_SPACING, 15);        // DEFAULT, 15 pixels between lines
     GuiSetStyle(DEFAULT, TEXT_ALIGNMENT_VERTICAL, TEXT_ALIGN_MIDDLE);   // DEFAULT, text aligned vertically to middle of text-bounds
 

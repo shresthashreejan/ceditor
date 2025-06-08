@@ -753,7 +753,7 @@ void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, fl
                 sidebarWidth - numberSize.x - SIDEBAR_MARGIN,
                 (i * lineHeight) + scrollPosY
             };
-            DrawTextEx(font, lineNumberStr, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
+            DrawTextEx(font, lineNumberStr, linePos, FONT_SIZE, TEXT_MARGIN, RAYWHITE);
         }
     EndScissorMode();
 }
@@ -773,7 +773,7 @@ void DrawTextLines(int firstVisibleLine, int lastVisibleLine, float lineHeight, 
                 sidebarWidth + TEXT_MARGIN + scroll.x,
                 (i * lineHeight) + scroll.y
             };
-            DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, BLACK);
+            DrawTextEx(font, line, linePos, FONT_SIZE, TEXT_MARGIN, RAYWHITE);
         }
     EndScissorMode();
 }
@@ -859,7 +859,7 @@ void DrawSearchInput(void)
     if (showSearchInput)
     {
         searchInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
-        GuiTextBox(searchInputBox, searchInput, 32, showSearchInput);
+        GuiTextBox(searchInputBox, searchInput, 256, showSearchInput);
 
         char searchHelpText[256] = "Enter search string.";
         char matchHelpText[256];
