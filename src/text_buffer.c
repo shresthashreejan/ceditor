@@ -45,7 +45,8 @@ int nonPrintableKeys[] = {
     KEY_TAB,
     KEY_DELETE,
     KEY_F,
-    KEY_O
+    KEY_O,
+    KEY_Q
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 int keyDownKeys[] = {
@@ -489,6 +490,15 @@ void ProcessKey(int key, bool ctrl, bool shift)
 
         case KEY_O:
             if (ctrl) showOpenFileInput = true;
+            break;
+
+        case KEY_Q:
+            if (ctrl)
+            {
+                UnloadResources();
+                CloseWindow();
+                exit(1);
+            }
             break;
 
         default:
