@@ -23,6 +23,7 @@ char *copiedText = NULL;
 char lineNumberInput[32];
 char saveFileInput[256];
 char searchInput[256];
+char openFileInput[256];
 char filepathHelpText[256];
 int lineBufferCapacity = 0;
 int sidebarWidth = SIDEBAR_WIDTH;
@@ -43,7 +44,8 @@ int nonPrintableKeys[] = {
     KEY_R,
     KEY_TAB,
     KEY_DELETE,
-    KEY_F
+    KEY_F,
+    KEY_O
 };
 int nonPrintableKeysLength = sizeof(nonPrintableKeys) / sizeof(nonPrintableKeys[0]);
 int keyDownKeys[] = {
@@ -72,16 +74,14 @@ bool cursorIdle = true;
 bool showLineNumberInput = false;
 bool showSaveFileInput = false;
 bool showSearchInput = false;
+bool showOpenFileInput = false;
 bool showSearchHelpText = false;
-bool showSaveHelpText = false;
+bool showFilePathHelpText = false;
 bool hasFile = false;
 Vector2 scroll = {0, 0};
 Rectangle viewport = {0};
 Rectangle totalView = {0};
 Rectangle panelView = {0};
-Rectangle lineNumberInputBox = {0};
-Rectangle saveFileInputBox = {0};
-Rectangle searchInputBox = {0};
 
 /* SETUP */
 void SetupTextBuffer(void)
@@ -132,7 +132,7 @@ void InsertChar(TextBuffer *buffer, char ch)
     buffer->cursorPos.x++;
     buffer->text[buffer->length] = '\0';
     TextBufferController();
-    showSaveHelpText = false;
+    showFilePathHelpText = false;
 }
 
 void RemoveChar(TextBuffer *buffer, int key, bool storeUndoFlag)
@@ -156,7 +156,7 @@ void RemoveChar(TextBuffer *buffer, int key, bool storeUndoFlag)
             buffer->cursorPos.y--;
         }
         TextBufferController();
-        showSaveHelpText = false;
+        showFilePathHelpText = false;
     }
 }
 
@@ -209,7 +209,7 @@ void UpdateSidebarWidth(void)
 /* KEY CONTROLLER */
 bool KeyController(void)
 {
-    if (showLineNumberInput || showSaveFileInput || showSearchInput) return false;
+    if (showLineNumberInput || showSaveFileInput || showSearchInput || showOpenFileInput) return false;
 
     int key = GetCharPressed();
     bool isAnyKeyPressed = false;
@@ -487,6 +487,10 @@ void ProcessKey(int key, bool ctrl, bool shift)
             ClearSelectionIndicator();
             break;
 
+        case KEY_O:
+            if (ctrl) showOpenFileInput = true;
+            break;
+
         default:
             break;
     }
@@ -740,7 +744,8 @@ void RenderTextBuffer(void)
     DrawLineNumberNavInput();
     DrawSaveFileInput();
     DrawSearchInput();
-    DrawSaveHelpText();
+    DrawOpenFileInput();
+    DrawFilePathHelpText();
 }
 
 void DrawSidebar(int firstVisibleLine, int lastVisibleLine, float lineHeight, float scrollPosY)
@@ -806,10 +811,10 @@ void DrawLineNumberNavInput(void)
 {
     if (showLineNumberInput)
     {
-        lineNumberInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
+        Rectangle lineNumberInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(lineNumberInputBox, lineNumberInput, 32, showLineNumberInput);
         char helpText[256] = "Enter line number.";
-        showSaveHelpText = false;
+        showFilePathHelpText = false;
         DrawHelpText(helpText);
         if (IsKeyPressed(KEY_ENTER))
         {
@@ -831,17 +836,15 @@ void DrawSaveFileInput(void)
 {
     if (showSaveFileInput)
     {
-        saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT)) / 2, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
+        Rectangle saveFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT)) / 2, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(saveFileInputBox, saveFileInput, 256, showSaveFileInput);
         char helpText[256] = "Enter file path to save.";
-        showSaveHelpText = false;
+        showFilePathHelpText = false;
         DrawHelpText(helpText);
 
         if (saveFileInput[0] != '\0')
         {
             filePath = saveFileInput;
-            hasFile = true;
-
             if (IsKeyPressed(KEY_ENTER))
             {
                 SaveFile();
@@ -861,23 +864,51 @@ void DrawSearchInput(void)
     static char prevSearchInput[256] = "";
     if (showSearchInput)
     {
-        searchInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
+        Rectangle searchInputBox = (Rectangle){GetScreenWidth() - INPUT_BOX_WIDTH - 12, 0, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
         GuiTextBox(searchInputBox, searchInput, 256, showSearchInput);
 
         char searchHelpText[256] = "Enter search string.";
         char matchHelpText[256];
         sprintf(matchHelpText, "Match found at line %d.", matchPosition);
 
-        showSaveHelpText = false;
+        showFilePathHelpText = false;
         if (showSearchHelpText) DrawHelpText(searchHelpText);
         if (!showSearchHelpText) DrawHelpText(matchHelpText);
         SearchText(prevSearchInput, searchInput);
     }
 }
 
-void DrawSaveHelpText(void)
+void DrawOpenFileInput(void)
 {
-    if (showSaveHelpText)
+    if (showOpenFileInput)
+    {
+        Rectangle openFileInputBox = (Rectangle){(GetScreenWidth() - (INPUT_BOX_WIDTH)) / 2, (GetScreenHeight() - BOTTOM_BAR_FONT_SIZE - (INPUT_BOX_HEIGHT)) / 2, INPUT_BOX_WIDTH, INPUT_BOX_HEIGHT};
+        GuiTextBox(openFileInputBox, openFileInput, 256, showOpenFileInput);
+
+        char helpText[256] = "Enter file path to open.";
+        showFilePathHelpText = false;
+        DrawHelpText(helpText);
+
+        if (openFileInput[0] != '\0')
+        {
+            filePath = openFileInput;
+            if (IsKeyPressed(KEY_ENTER))
+            {
+                LoadFile();
+                showOpenFileInput = false;
+            }
+
+            if (IsKeyPressed(KEY_ESCAPE))
+            {
+                showOpenFileInput = false;
+            }
+        }
+    }
+}
+
+void DrawFilePathHelpText(void)
+{
+    if (showFilePathHelpText)
     {
         DrawHelpText(filepathHelpText);
     }
@@ -1131,6 +1162,7 @@ void CalculateCursorPosition(int key)
             else if (textBuffer.cursorPos.y == 0)
             {
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                highestXOffset = 0;
             }
             break;
 
@@ -1153,6 +1185,7 @@ void CalculateCursorPosition(int key)
             else if (textBuffer.cursorPos.y == textBuffer.lineCount - 1)
             {
                 textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineEnd;
+                highestXOffset = 0;
             }
             break;
 
@@ -1421,8 +1454,18 @@ void LoadFile(void)
     FILE *file = fopen(filePath, "r");
     if (file == NULL)
     {
-        printf("Error: File not found at the specified path: %s\n", filePath);
-        exit(1);
+        if (showOpenFileInput)
+        {
+            showOpenFileInput = false;
+            sprintf(filepathHelpText, "No file found.");
+            showFilePathHelpText = true;
+        }
+        else
+        {
+            printf("Error: File not found at the specified path: %s\n", filePath);
+            exit(1);
+        }
+        return;
     }
 
     fseek(file, 0, SEEK_END);
@@ -1466,14 +1509,15 @@ void SaveFile(void)
     if (file == NULL)
     {
         sprintf(filepathHelpText, "No file found at %s\n", filePath);
-        showSaveHelpText = true;
+        showFilePathHelpText = true;
         return;
     }
 
     fwrite(textBuffer.text, sizeof(char), textBuffer.length, file);
     fclose(file);
     sprintf(filepathHelpText, "File saved to %s\n", filePath);
-    showSaveHelpText = true;
+    showFilePathHelpText = true;
+    hasFile = true;
 }
 
 /* BUFFER SNAPSHOT */
