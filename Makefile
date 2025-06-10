@@ -1,10 +1,25 @@
 CC = gcc
 CFLAGS = -I include/ -std=c99 -Wall -Wextra -pedantic
-LDFLAGS = -lraylib -lGL -lm -lpthread
 
+OS ?= linux
 BUILD = build
+
+ifeq ($(OS), linux)
+	LDFLAGS = -lraylib -lGL -lm -lpthread
+	TARGET = $(BUILD)/ceditor
+endif
+
+ifeq ($(OS), windows)
+	LDFLAGS = -L lib/ -lraylib -lopengl32 -lgdi32 -lwinmm
+	TARGET = $(BUILD)/ceditor.exe
+endif
+
+ifeq ($(OS), macos)
+	LDFLAGS = -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+	TARGET = $(BUILD)/ceditor
+endif
+
 OBJ = ${BUILD}/main.o ${BUILD}/raygui.o ${BUILD}/config.o ${BUILD}/screen.o ${BUILD}/text_buffer.o
-TARGET = ${BUILD}/ceditor
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)

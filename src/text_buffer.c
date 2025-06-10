@@ -220,6 +220,7 @@ bool KeyController(void)
         {
             InsertChar(&textBuffer, (char)key);
             isAnyKeyPressed = true;
+            ClearSelectionIndicator();
         }
         key = GetCharPressed();
     }
@@ -316,9 +317,15 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_UP:
-            if (shift)
+            if (!ctrl && shift)
             {
                 CalculateSelection(KEY_UP);
+            }
+            else if (ctrl && shift)
+            {
+                textBuffer.cursorPos.y = 0;
+                textBuffer.cursorPos.x = lineBuffer[(int)textBuffer.cursorPos.y].lineStart;
+                UpdateView();
             }
             else
             {
@@ -328,9 +335,15 @@ void ProcessKey(int key, bool ctrl, bool shift)
             break;
 
         case KEY_DOWN:
-            if (shift)
+            if (!ctrl && shift)
             {
                 CalculateSelection(KEY_DOWN);
+            }
+            else if (ctrl + shift)
+            {
+                textBuffer.cursorPos.y = textBuffer.lineCount - 1;
+                textBuffer.cursorPos.x = lineBuffer[textBuffer.lineCount - 1].lineEnd;
+                UpdateView();
             }
             else
             {
