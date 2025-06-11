@@ -18,3 +18,6 @@ A minimal text editor built from scratch using C and Raylib.
 - Text search
 
 ![ceditor screenshot](assets/images/ceditor.png)
+
+### Credits
+Font - [Victor Mono](https://rubjo.github.io/victor-mono)
